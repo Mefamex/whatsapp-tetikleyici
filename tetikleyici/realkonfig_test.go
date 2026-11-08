@@ -156,7 +156,6 @@ func TestGercekConfigBetiklerDiskteVar(t *testing.T) {
 			if _, err2 := os.Stat(filepath.Join("..", genislet)); err2 == nil {
 				continue
 			}
-			// tetikleyici/ altındayken "tetikleyici/cmd/cmd.py" -> "cmd/cmd.py"
 			kirpilmis := strings.TrimPrefix(genislet, "tetikleyici/")
 			if _, err3 := os.Stat(kirpilmis); err3 == nil {
 				continue

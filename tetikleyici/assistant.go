@@ -37,6 +37,10 @@ var metinTurleri = map[string]bool{
 	"text":          true,
 	"extended_text": true,
 	"poll":          true,
+	"location":      true,
+	"live_location": true,
+	"contact":       true,
+	"contact_array": true,
 }
 
 // yol, tek kuralın bu mesaj için hangi hattı çalıştıracağını söyler.
