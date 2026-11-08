@@ -7,96 +7,116 @@
 | **License**  | MIT                                                           |
 | **Created**  | 2026-11-08                                                    |
 | **Updated**  | 2026-11-08                                                    |
-| **Stack**    | Go 1.22+, Python 3.10+, Whisper, Ollama, PyTorch, Bash        |
+| **Stack**    | Go 1.22+, Python 3.10+, Systemd, Whisper, Ollama, PyTorch, Bash |
 | **Platform** | Linux, macOS                                                  |
 | **Status**   | Production Ready                                              |
 
-> WhatsApp Bridge olay akışını (SSE) dinleyen; gelen mesajları kabuk komutlarına (`/cmd`), interaktif bash kabuğuna (`/cmdhub`), yapay zekâ oturum tünellerine (`/session`), yerel görsel analize (Ollama vision) ve ses transkripsiyonuna (Whisper) yönlendiren akıllı otomasyon ve olay dağıtım (dispatcher) motoru.
+> **İnternete bağlı kişisel bilgisayarınız ile WhatsApp arasında çalışan, ister bağımsız yapay zekâ ajanlarıyla ister yapay zekâya ihtiyaç duymadan doğrudan sistem seviyesinde çalışan çift yönlü köprü, otomasyon ve olay dağıtım (dispatcher) platformu.**
 
 ---
 
-## 1. Mimari ve Görsel Önizleme (Architecture & Preview)
+## 1. Temel Amaç ve Felsefe (Core Vision)
+
+Bu proje, WhatsApp'ı kişisel bilgisayarınız için güvenli, hızlı ve esnek bir uzaktan kumandaya dönüştürmek üzere geliştirilmiştir:
+
+1. **WhatsApp ↔ Bilgisayar Köprüsü:** Kişisel bilgisayarınızı dışarıdan erişilebilir bir sunucu gibi kullanmanızı sağlar. Karmaşık VPN, SSH veya port yönlendirme ayarları yapmadan doğrudan WhatsApp sohbetiniz üzerinden bilgisayarınızla haberleşirsiniz.
+2. **Kişiselleştirilmiş Tetikleme & Sabit Oturumlar (Persistent Sessions):** Gelen mesajın kimden geldiğine (numara / WhatsApp LID) göre özelleştirilmiş kurallar çalışır. Tanımlı her kişi için sabit bir oturum kimliği (`session ID`) tutulabilir; böylece konuşmalar her mesajda sıfırlanmaz, geçmiş bağlam korunur.
+3. **AI Olmadan da Doğrudan Bilgisayar Yönetimi (Admin Komutları):** Bilgisayar açıldığında tetikleyici `systemd` servisiyle arka planda otomatik başlar. Yapay zekâ modellerine ihtiyaç kalmadan, admin yetkisine sahip numara tek mesajla doğrudan terminal komutları (`/cmd`), web kamerası fotoğrafı (`/camera`), sistem sağlık durumu (`/durum`) çalıştırabilir.
+4. **Dinamik Model ve Ajan Değişimi:** Sohbet içindeyken tek bir komutla aktif çalışan yapay zekâ motoru (`/agent agy`, `/agent claude`, `/agent opencode`), oturum tüneli (`/session go`) ve dil modeli anında değiştirilebilir.
+5. **Çoklu Ortam (Multimodal) Hatları:** WhatsApp sesli notları yerel Whisper ile anında metne dökülür; fotoğraflar ve belgeler yerel görüntü modelleriyle (Ollama / Qwen2.5-VL) analiz edilir.
+6. **Sıfır Kişisel Veri Sızıntısı (Zero-Leak Privacy):** Gerçek telefon ve LID numaraları repoda tutulmaz; `.gitignore` korumalı yerel yapılandırma ve örnek şablon (`tetikleyici.example.yaml`) ile tam izolasyon sağlanır.
+
+---
+
+## 2. Mimari ve Olay Akışı (Architecture & Workflow)
 
 ```text
-┌─────────────────────────┐
-│  WhatsApp Bridge (API)  │
-│  (SSE: /events)         │
-└────────────┬────────────┘
-             │ Server-Sent Events
-             ▼
+┌───────────────────────────────┐
+│     WhatsApp Bridge (API)     │
+│   (SSE Dinleyici: /events)    │
+└───────────────┬───────────────┘
+                │ Gerçek Zamanlı Olay Akışı (SSE)
+                ▼
 ┌────────────────────────────────────────────────────────┐
 │             WhatsApp Tetikleyici Motoru (Go)           │
-│  - Kural & Kimlik Filtresi (Whitelist / Regex)         │
-│  - Catch-up Yaş Filtresi (Eski Mesaj Koruması)         │
-│  - Tünel Durum Denetleyicisi (.tetikleyici/tunel)      │
-└────────────┬──────────────────┬──────────────────┬─────┘
-             │                  │                  │
-      [ /cmd & /cmdhub ]    [ Fotoğraf ]       [ Sesli Not ]
-             │                  │                  │
-             ▼                  ▼                  ▼
-      ┌──────────────┐   ┌──────────────┐   ┌──────────────┐
-      │   Bash CLI   │   │ Ollama V-LLM │   │ Whisper ASR  │
-      │  ve Ajanlar  │   │  (Qwen2.5-VL)│   │ (VRAM Boşalt)│
-      └──────┬───────┘   └──────┬───────┘   └──────┬───────┘
-             │                  │                  │
-             └──────────────────┼──────────────────┘
-                                ▼
-                   ┌─────────────────────────┐
-                   │  Formatlanmış Yanıt     │
-                   │  (POST /send -> WP)     │
-                   └─────────────────────────┘
+│  - Beyaz Liste & RBAC Yetki Kontrolü (users)           │
+│  - Catch-up Yaş Filtresi (Eski/Bayat Mesaj Önleme)     │
+│  - Sabit Oturum & Tünel Durum Denetleyicisi            │
+└───────┬───────────────┬───────────────┬────────────────┘
+        │               │               │
+  [ /cmd & /bash ] [ Fotoğraf/Belge ] [ Sesli Not ]
+        │               │               │
+        ▼               ▼               ▼
+ ┌──────────────┐ ┌──────────────┐ ┌──────────────┐
+ │ Doğrudan CLI │ │ Ollama V-LLM │ │ Whisper ASR  │
+ │ ve AI Motoru │ │ (Qwen2.5-VL) │ │(VRAM Tahliye)│
+ │(AGY/Claude/OC)└──────┬───────┘ └──────┬───────┘
+ └──────┬───────┘       │                │
+        │               └───────┬────────┘
+        ▼                       ▼
+ ┌────────────────────────────────────────┐
+ │           Formatlanmış Yanıt           │
+ │       (POST /send -> WhatsApp)         │
+ └────────────────────────────────────────┘
 ```
 
-- **Sıfır Mesaj Kaybı:** SSE bağlantısı kopsa bile otomatik yeniden bağlanır ve bayat mesajları süzer.
-- **Akıllı VRAM Tasarrufu:** Whisper ve görüntü modelleri GPU'da gereksiz yer tutmaz; iş bitince bellek derhal tahliye edilir.
+* **Sıfır Mesaj Kaybı:** Bağlantı kopsa dahi SSE otomatik yeniden bağlanır ve tamponlanan mesajları işler.
+* **Akıllı Bellek Tahliyesi:** Whisper ve yerel görüntü modelleri işi bittiğinde GPU VRAM'ini serbest bırakır.
 
 ---
 
-## 2. Belge Haritası (Repository Doc Map)
+## 3. Komut Referansı (WhatsApp Üzerinden)
 
-| Belge | Amacı ve Sorumluluğu |
-| :--- | :--- |
-| [`README.md`](./README.md) | Proje vitrini, komut referansı, kurulum ve mimari kılavuz |
-| [`TODO.md`](./TODO.md) | Aktif sprint, bağlam çapası ve gelecek özellikler |
-| [`TODO.DONE.md`](./TODO.DONE.md) | Doğrulanmış iş arşivi (ters kronolojik, test çıktılarıyla) |
-| [`ASK.md`](./ASK.md) | Açık mimari sorular ve alınan otonom teknik kararlar |
-| [`NOTES.md`](./NOTES.md) | Dahili teknik bellek, tünel mekanizması ve GPU stratejisi |
-| [`config.yaml`](./config.yaml) | Kaskad yapılandırma ayarları ve çevre değişkenleri |
-| [`tetikleyici.example.yaml`](./tetikleyici.example.yaml) | Kapsamlı kural ve filtreleme şablonu (`tetikleyici.yaml`) |
-| [`Makefile`](./Makefile) | Tek komutla bağımlılık, derleme, test ve temizlik yönetimi |
-
----
-
-## 3. Temel Yetenekler ve Komut Merkezi
-
-### Komut Referansı (WhatsApp Üzerinden)
+Yetkili admin numarası, WhatsApp üzerinden şu komutları doğrudan çalıştırabilir:
 
 | Komut | Parametre | Açıklama |
 | :--- | :--- | :--- |
 | `/cmd` | `<komut>` | Tek seferlik kabuk komutu çalıştırır (özet WhatsApp'a, tam çıktı diske) |
-| `/cmdhub` | - | Doğrudan bash tüneli açar; yazılan her metin kabukta koşulur |
-| `/cmdhub out` | - | Son komutun tam terminal çıktısını WhatsApp'a döker |
-| `/cmdhub cd` | `<dizin>` | Tünelin çalışma dizinini değiştirir |
-| `/session list` | `[n]` | Açık yapay zekâ ajan oturumlarını listeler |
-| `/session go` | `<no \| id>` | Mesajları doğrudan seçilen ajanın oturumuna tüneller |
-| `/session exit`| - | Aktif oturum tünelini kapatır, normal moda döner |
+| `/cmdhub` | - | İnteraktif bash kabuk tüneli açar; yazılan her metin kabukta koşulur |
+| `/cmdhub cd` | `<dizin>` | Bash tünelinin çalışma dizinini değiştirir |
+| `/cmdhub out`| - | Son çalıştırılan komutun tam terminal çıktısını sohbete döker |
+| `/camera` | - | Bilgisayarın web kamerasından fotoğraf çeker ve anında WhatsApp'a gönderir |
+| `/durum` | - | Köprü ve tetikleyici servislerinin anlık çalışma durumunu raporlar |
+| `/ping` | - | Tetikleyicinin canlılığını ve ağ gecikmesini anında ölçer |
+| `/agent` | `[agy\|claude\|opencode\|durum]` | Aktif yapay zekâ ajan motorunu canlıda değiştirir veya durumu gösterir |
+| `/session list` | `[n]` | Açık yapay zekâ oturumlarını listeler |
+| `/session go` | `<no \| id>` | Mesajları seçilen ajanın oturumuna doğrudan tüneller |
+| `/session exit`| - | Aktif oturum tünelinden çıkıp varsayılan ana hatta döner |
+| `/zamanla` | `<süre> <mesaj>` | Belirtilen süre sonra WhatsApp'tan mesaj göndermeyi zamanlar (`/zamanla 15dk su iç`) |
+| `/zamanla list`| - | Bekleyen zamanlanmış görevleri listeler |
+| `/zamanla iptal`| `<id>` | Zamanlanmış bir görevi iptal eder |
+| `/reply` | `[no] <cevap>` | Ajanın bekleyen bir sorusuna doğrudan cevap iletir |
 | `/exit` | - | Açık olan her türlü tünelden (`cmdhub` veya `session`) çıkar |
-| `/agent` | `<secim>` | Ajan motorunu değiştirir (`opencode`, `agy`, `claude`) |
-| `/ping` | - | Tetikleyicinin canlılığını ve yanıt süresini test eder |
+| `/help` | - | Kullanılabilir komutların yardım metnini listeler |
 
 ---
 
-## 4. Teknoloji Yığını ve Gereksinimler (Tech Stack & Prerequisites)
+## 4. Belge Haritası (Repository Doc Map)
 
-* **Go:** 1.22+
-* **Python:** 3.10+ (ve `uv` paket yöneticisi)
-* **Ollama (Opsiyonel):** Görsel analiz için (`qwen2.5-vl:7b`)
-* **FFmpeg & PyTorch (Opsiyonel):** Sesli mesaj transkripsiyonu için
-* **WhatsApp Bridge:** Çalışan bir `whatsapp-bridge-mcp` servisi (`http://127.0.0.1:31415`)
+| Belge | Amacı ve Sorumluluğu |
+| :--- | :--- |
+| [`README.md`](./README.md) | Proje vitrini, felsefesi, komut referansı, kurulum ve mimari kılavuz |
+| [`TODO.md`](./TODO.md) | Aktif sprint, adaptör mimarisi planı ve gelecek özellikler |
+| [`TODO.DONE.md`](./TODO.DONE.md) | Doğrulanmış iş arşivi (ters kronolojik, test çıktılarıyla) |
+| [`ASK.md`](./ASK.md) | Açık mimari sorular ve alınan otonom teknik kararlar |
+| [`NOTES.md`](./NOTES.md) | Dahili teknik bellek, tünel mekanizması ve GPU stratejisi |
+| [`tetikleyici.example.yaml`](./tetikleyici.example.yaml) | Kapsamlı kural, kullanıcı ve filtreleme şablonu |
+| [`Makefile`](./Makefile) | Tek komutla bağımlılık, derleme, test ve temizlik yönetimi |
 
 ---
 
-## 5. Kurulum ve Hızlı Başlangıç (Installation & Quick Start)
+## 5. Teknoloji Yığını ve Gereksinimler
+
+* **Go:** 1.22+ (Çekirdek SSE ve olay dağıtım motoru)
+* **Python:** 3.10+ (Boru hatları ve `uv` sanal ortamı)
+* **WhatsApp Bridge:** `whatsapp-bridge-mcp` servisi (`http://127.0.0.1:31415`)
+* **Systemd:** Otomatik arka plan servis yönetimi (Linux)
+* **Ollama & Qwen2.5-VL (Opsiyonel):** Yerel görsel analiz boru hattı
+* **FFmpeg & Whisper (Opsiyonel):** Sesli not transkripsiyon boru hattı
+
+---
+
+## 6. Kurulum ve Hızlı Başlangıç
 
 ### 1. Depoyu Klonlayın
 ```bash
@@ -104,71 +124,73 @@ git clone https://github.com/Mefamex/whatsapp-tetikleyici.git
 cd whatsapp-tetikleyici
 ```
 
-### 2. Bağımlılıkları Kurun
+### 2. Kurulumu Yapın
+`make install` komutu Go bağımlılıklarını çözer, Python `.venv` ortamını kurar ve eğer mevcut değilse `tetikleyici.example.yaml` dosyasını otomatik olarak `tetikleyici.yaml` olarak kopyalar:
+
 ```bash
 make install
 ```
 
-### 3. Yapılandırmayı Ayarlayın
-`tetikleyici.example.yaml` dosyasını `tetikleyici.yaml` olarak kopyalayın ve yetkili numaranızı ekleyin:
-
-```bash
-cp tetikleyici.example.yaml tetikleyici.yaml
-```
+### 3. Yapılandırmayı Düzenleyin
+Oluşturulan `tetikleyici.yaml` dosyasında yetkili telefon ve LID numaranızı girin (`tetikleyici.yaml` dosyası `.gitignore` ile korumalıdır; repoya sızmaz):
 
 ```yaml
-# tetikleyici.yaml içinde:
-- name: sahip
-  match:
-    wp_number: ["905551234567"]
-  do:
-    - type: opencode
+users:
+  users:
+    - number: ["905551234567", "12345678901234@lid"]
+      name: ["Admin"]
+      allow_slash: true
       allow_cmd: true
-      allow_gorsel: true
-      allow_ses: true
+      allow_camera: true
+      allow_durum: true
+      allow_zamanla: true
+
+rules:
+  - name: admin-kurali
+    match:
+      wp_number: ["905551234567", "12345678901234@lid"]
+    do:
+      - type: opencode
+        allow_cmd: true
+        allow_gorsel: true
+        allow_ses: true
 ```
 
-### 4. Tetikleyiciyi Başlatın
+### 4. Servisi Başlatın ve Otomatik Başlatmayı Açın
+Tetikleyiciyi arka planda kullanıcı servisi olarak ayarlamak için:
+
 ```bash
+# Elle anlık başlatmak için:
 make run
+
+# Bilgisayar açıldığında otomatik başlaması için (Systemd User Service):
+systemctl --user enable --now whatsapp-tetikleyici.service
 ```
 
 ---
 
-## 6. Yapılandırma ve Çevre Değişkenleri
-
-| Parametre | Ortam Değişkeni | Varsayılan | Açıklama |
-| :--- | :--- | :--- | :--- |
-| `bridge.url` | `BRIDGE_URL` | `http://127.0.0.1:31415` | WhatsApp Bridge API adresi |
-| `bridge.catchup` | `CATCHUP_MAX_AGE_MIN` | `10` | Eski mesajların atlanma süresi (dakika) |
-| `pipelines.whisper` | `WHISPER_MODEL` | `base` | Whisper ses modeli boyutu |
-| `pipelines.vision` | `OLLAMA_VISION_MODEL` | `qwen2.5-vl:7b` | Ollama görüntü modeli |
-| `pipelines.keep_alive`| `GORSEL_KEEP_ALIVE` | `15m` | Ollama modelinin bellekte kalma süresi |
-
----
-
-## 7. Kullanım ve Yaşam Döngüsü Komutları
+## 7. Yaşam Döngüsü ve Yönetim Komutları
 
 ```bash
-make            # Kullanılabilir tüm komutları listeler
+make            # Kullanılabilir tüm Makefile komutlarını listeler
 make build      # Go motorunu bin/tetikleyici olarak derler
-make run        # Tetikleyiciyi arka planda başlatır
-make test       # Go (27 test) ve Python (153 test) testlerini koşturur
-make verify     # Commit öncesi lint ve test doğrulamalarını çalıştırır
-make clean      # Geçici önbellekleri ve logları temizler
+make run        # Tetikleyici daemon'ını başlatır
+make test       # Go ve Python birim testlerini çalıştırır
+make verify     # Commit öncesi lint ve test doğrulamalarını koşturur
+make clean      # Geçici önbellekleri, test artıklarını ve logları temizler
 ```
 
 ---
 
 ## 8. Güvenlik, Gizlilik ve Kırmızı Çizgiler (Safety & Privacy)
 
-1. **Beyaz Liste Zorunluluğu:** Yetkisiz numaralardan gelen `/cmd` ve sistem komutları kesinlikle engellenir ve yanıt verilmez.
-2. **Kişisel Veri (PII) Temizliği:** Depoda, yapılandırmada ve testlerde asla gerçek telefon numarası veya gizli kimlik bulunmaz.
-3. **Çıktı İzolasyonu:** Kabuk çıktıları `whatsapp-cmd/` dizininde saklanır ve asla dış sunuculara iletilmez.
+1. **RBAC ve Beyaz Liste Zorunluluğu:** Bilinmeyen veya yetkisi olmayan numaralardan gelen `/cmd`, `/camera` veya tünel komutları tamamen yok sayılır; yanıt verilmez.
+2. **PII İzolasyonu:** Depoda, yapılandırmada ve testlerde asla gerçek telefon numarası veya kişisel WhatsApp LID kimlikleri bulunmaz.
+3. **Lokal İzolasyon:** Kabuk çıktıları ve geçici medya dosyaları yerel diskte tutulur, hiçbir 3. parti buluta gönderilmez.
 
 ---
 
-## 9. Lisans ve Katkı (License)
+## 9. Lisans
 
 Bu proje [MIT Lisansı](./LICENSE) altında sunulmuştur.  
-Geliştirici: **Mehmet Akif Akkoç (Mefamex)**
+Geliştirici: **[Mehmet Akif Akkoç (Mefamex)](https://github.com/Mefamex)**
