@@ -79,6 +79,34 @@ Silinen eski `whatsapp-bridge-project` arşivinden kopyalanıp **commit'lenmemi�
 - [ ] `whatsapp-bridge-mcp/sidecar/` (VoIP sidecar) — **içinde `node_modules/` var, commit'LEME**. `.gitignore`'a `sidecar/node_modules/` ekle; `rsrc-dump.txt` (322 KB) gereksiz olabilir, gözden geçir; `package-lock.json` kalsın. Sidecar ayrı repo mu olmalı, yoksa köprü reposunda mı kalmalı karar ver. Köprü şu an `WASM binary not found` uyarısı veriyor (arama özelliği kapalı).
 - [ ] Taramadan sonra: `grep -rnE "9054|9053|1234563"` ile kalan gerçek kimlik kontrolü, `make test`, commit, push.
 
+### 9. 🛡️ İnteraktif Onay ve İzin Sistemi (Interactive Approval / Permissions) [PLANLANDI]
+- [ ] **Tehlikeli Eylem Koruması:** Ajan veya tetikleyici riskli komutlar (`rm`, `git push --force`, `systemctl`, veri silme vb.) çalıştırmadan önce işlemi durdurur ve admin onayına sunar.
+- [ ] **WhatsApp Anket (Poll) ile Onay:** Köprünün native anket (`whatsapp_send_poll`) yeteneğiyle 4 seçenekli soru gönderilir:
+  1. `[1] Tek seferlik onayla`
+  2. `[2] Reddet`
+  3. `[3] 1 saat boyunca tümünü otomatik onayla`
+  4. `[4] 1 hafta boyunca otomatik onayla`
+- [ ] **Yetki Damgası Saklama:** `.tetikleyici/izinler.json` dosyasında geçici onay süreleri (`auto_approve_until: <timestamp>`) tutulur; süre bitiminde tekrar onay sorma moduna dönülür.
+
+### 10. 📸 `/ekran` Masaüstü Ekran Görüntüsü Alma Komutu [PLANLANDI]
+- [ ] **Masaüstü Görüntüsü Gönderme:** Tıpkı `/camera` gibi çalışan ama monitörün anlık ekran görüntüsünü WhatsApp'a yollayan `/ekran` (veya `/screenshot`) komutu.
+- [ ] **Wayland / KDE Desteği:** Arch Linux KDE Plasma Wayland üzerinde `spectacle -b -n -o /tmp/ekran.png` (veya `grim`) çağrısı ile ekran yakalanır, `whatsapp-bridge` üzerinden resim olarak iletilir.
+- [ ] **Opsiyonel Parametreler:** `/ekran 5` (5 saniye gecikmeli çekim) desteği.
+
+### 11. ⏱️ Yapay Zekâ Destekli Gelişmiş Zamanlayıcı (Agentic Cron / Scheduled Workflows) [PLANLANDI]
+- [ ] **Sabit Metinden Akıllı İş Akışına Geçiş:** Mevcut `/zamanla` yalnız statik metin gönderiyor. AGY / Claude Desktop benzeri "Ajanlı Zamanlanmış İş Akışları" yapısına kavuşturulacak.
+- [ ] **Örnek Komutlar:**
+  - `/zamanla her sabah 08:30 takvimimi, maillerimi ve GitHub bildirimlerimi özetle`
+  - `/zamanla 2 saatte bir sunucu ve servis sağlığını kontrol et, sorun varsa haber ver`
+- [ ] **Arka Plan Çalıştırıcısı:** Zamanı geldiğinde ajanın sabit oturumu tetiklenir, araçları (MCP/CLI) kullanarak araştırmasını yapar ve üretilen çıktıyı WhatsApp'a iletir.
+
+### 12. ⏳ Canlı İlerleme Bildirimi ve Mesaja Reaksiyon (Emoji Feedback) [PLANLANDI]
+- [ ] **Gelen Mesaja Anlık Reaksiyon:**
+  - Admin mesaj attığında tetikleyici mesajı alıp sıraya koyduğu an mesaja otomatik `👀` veya `⏳` reaksiyonu bırakır (kullanıcı mesajının ulaştığını ve işlendiğini anında anlar).
+  - İşlem başarıyla bitip cevap gönderildiğinde reaksiyon `✅` yapılır.
+  - Hata oluşursa reaksiyon `❌` yapılır.
+- [ ] **Uzun Süren Görevlerde Durum Güncellemesi:** 10 saniyeden uzun süren analizlerde WhatsApp'a ara aşama durum bildirimleri (*"Araştırılıyor 🔍"*, *"Derleniyor ⚙️"*) gönderilir.
+
 ---
 
 ## Kritik / Bloke

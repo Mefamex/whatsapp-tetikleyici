@@ -76,6 +76,7 @@ Yetkili admin numarası, WhatsApp üzerinden şu komutları doğrudan çalışt�
 | `/cmdhub cd` | `<dizin>` | Bash tünelinin çalışma dizinini değiştirir |
 | `/cmdhub out`| - | Son çalıştırılan komutun tam terminal çıktısını sohbete döker |
 | `/camera` | - | Bilgisayarın web kamerasından fotoğraf çeker ve anında WhatsApp'a gönderir |
+| `/ekran` | `[saniye]` | Bilgisayarın masaüstü ekran görüntüsünü çeker ve WhatsApp'a fotoğraf olarak atar |
 | `/durum` | - | Köprü ve tetikleyici servislerinin anlık çalışma durumunu raporlar |
 | `/ping` | - | Tetikleyicinin canlılığını ve ağ gecikmesini anında ölçer |
 | `/agent` | `[agy\|claude\|opencode\|durum]` | Aktif yapay zekâ ajan motorunu canlıda değiştirir veya durumu gösterir |
@@ -190,7 +191,16 @@ make clean      # Geçici önbellekleri, test artıklarını ve logları temizle
 
 ---
 
-## 9. Lisans
+## 9. Gelecek Yol Haritası ve Gelişmiş Özellikler (Roadmap)
+
+- [ ] **🛡️ İnteraktif Onay Sistemi:** Riskli eylemlerde WhatsApp'a 4 seçenekli anket atarak onay isteme (Tek seferlik onayla, Reddet, 1 saatliğine tümünü onayla, 1 haftalığına tümünü onayla).
+- [ ] **📸 `/ekran` Masaüstü Yakalama:** Monitörün anlık ekran görüntüsünü WhatsApp'a yollama (`spectacle`/`grim`).
+- [ ] **⏱️ Yapay Zekâ Destekli Cron:** Periyodik otonom görevler (`/zamanla her sabah 08:30 günün özetini hazırla`).
+- [ ] **⏳ Canlı İlerleme ve Emoji Geri Bildirimi:** Mesaj işlenirken otomatik `👀` / `⏳`, tamamlandığında `✅` reaksiyonu koyma ve uzun süren işlerde canlı durum güncellemesi.
+
+---
+
+## 10. Lisans
 
 Bu proje [MIT Lisansı](./LICENSE) altında sunulmuştur.  
 Geliştirici: **[Mehmet Akif Akkoç (Mefamex)](https://github.com/Mefamex)**
