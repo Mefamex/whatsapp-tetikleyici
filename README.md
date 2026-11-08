@@ -62,7 +62,7 @@
 | [`ASK.md`](./ASK.md) | Açık mimari sorular ve alınan otonom teknik kararlar |
 | [`NOTES.md`](./NOTES.md) | Dahili teknik bellek, tünel mekanizması ve GPU stratejisi |
 | [`config.yaml`](./config.yaml) | Kaskad yapılandırma ayarları ve çevre değişkenleri |
-| [`config.example.yaml`](./config.example.yaml) | Kapsamlı kural ve filtreleme şablonu (`tetikleyici.yaml`) |
+| [`tetikleyici.example.yaml`](./tetikleyici.example.yaml) | Kapsamlı kural ve filtreleme şablonu (`tetikleyici.yaml`) |
 | [`Makefile`](./Makefile) | Tek komutla bağımlılık, derleme, test ve temizlik yönetimi |
 
 ---
@@ -110,10 +110,10 @@ make install
 ```
 
 ### 3. Yapılandırmayı Ayarlayın
-`config.example.yaml` dosyasını `tetikleyici.yaml` olarak kopyalayın ve yetkili numaranızı ekleyin:
+`tetikleyici.example.yaml` dosyasını `tetikleyici.yaml` olarak kopyalayın ve yetkili numaranızı ekleyin:
 
 ```bash
-cp config.example.yaml tetikleyici.yaml
+cp tetikleyici.example.yaml tetikleyici.yaml
 ```
 
 ```yaml

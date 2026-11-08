@@ -648,6 +648,13 @@ func expandHome(path string) string {
 func loadConfig(path string) (ruleSet, error) {
 	raw, err := os.ReadFile(path)
 	if err != nil {
+		if os.IsNotExist(err) {
+			example := filepath.Join(filepath.Dir(path), "tetikleyici.example.yaml")
+			if exRaw, exErr := os.ReadFile(example); exErr == nil {
+				_ = os.WriteFile(path, exRaw, 0644)
+				return parseConfig(exRaw)
+			}
+		}
 		return ruleSet{}, fmt.Errorf("config unreadable (%s): %w", path, err)
 	}
 	return parseConfig(raw)

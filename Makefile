@@ -26,6 +26,10 @@ install: ## Bağımlılıkları kurar (Go modülleri + Python uv sanal ortamı)
 	@echo "==> Python sanal ortamı ve gereksinimler kuruluyor..."
 	uv venv .venv
 	uv pip install -r requirements.txt
+	@if [ ! -f tetikleyici.yaml ] && [ -f tetikleyici.example.yaml ]; then \
+		echo "==> tetikleyici.yaml bulunamadı, tetikleyici.example.yaml kopyalanıyor..."; \
+		cp tetikleyici.example.yaml tetikleyici.yaml; \
+	fi
 	@echo "==> Kurulum tamamlandı."
 
 reinstall: remove install ## Kurulu ortamı kaldırıp sıfırdan yeniden kurar

@@ -9,7 +9,11 @@ import (
 
 // shippedConfigPath returns the path to the config file at project root.
 func shippedConfigPath() string {
-	return filepath.Join("..", "tetikleyici.yaml")
+	p := filepath.Join("..", "tetikleyici.yaml")
+	if _, err := os.Stat(p); err == nil {
+		return p
+	}
+	return filepath.Join("..", "tetikleyici.example.yaml")
 }
 
 // shippedDocsPath returns the companion documentation file. The config is kept

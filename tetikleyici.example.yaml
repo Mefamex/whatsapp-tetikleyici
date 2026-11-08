@@ -165,7 +165,7 @@ notify:
 # restart GEREKMEZ — her tur config yeniden okunur).
 heartbeat:
   to: ["12345678901234@lid"]
-  session: ses_ef8590662ffeRSLXLL2R8VhJfM   # mefamex-oturum'un sabit oturumu
+  # session: ses_ef8590662ffeRSLXLL2R8VhJfM   # boşsa/yorumdaysa heartbeat kapalıdır
   idle: 15m
   every: 1m
   mesaj: "admin ile konuşman bir süredir durağan. ona mesaj atman gerekiyorsa at"

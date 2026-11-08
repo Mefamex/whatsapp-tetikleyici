@@ -24,6 +24,8 @@ tmp/
 .env
 .env.*
 !.env.example
+tetikleyici.yaml
+*.local.yaml
 
 # Python venv & cache
 .venv/
