@@ -211,6 +211,39 @@ def ana(metin: str, gonderen_numara: str, gonderen_isim: str) -> str:
             sonuc.alt_komut, sonuc.hedef or sonuc.kod, gonderen_numara, debug_cikti
         )
 
+    # /react <emoji> [target_id]
+    if sonuc.komut_turu == "react":
+        import json
+        import urllib.request
+
+        emoji = sonuc.metin
+        # Hedef ID: önce argüman, sonra alıntılanan mesaj (TRIGGER_QUOTED_ID), yoksa son tetikleyen (TRIGGER_ID)
+        target_id = (
+            sonuc.hedef
+            or os.getenv("TRIGGER_QUOTED_ID", "")
+            or os.getenv("TRIGGER_ID", "")
+        )
+        if not target_id:
+            return "Hata: Tepki verilecek mesaj ID'si bulunamadı (bir mesaja sağa çekip /react <emoji> yazabilirsin)."
+
+        url = "http://127.0.0.1:31415/reaction"
+        data = json.dumps(
+            {"to": gonderen_numara, "message_id": target_id, "emoji": emoji}
+        ).encode("utf-8")
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status == 200:
+                    return f"Tepki eklendi: {emoji}"
+                return f"Köprü hatası: {resp.status}"
+        except Exception as e:
+            return f"Reaksiyon gönderilemedi: {e}"
+
     # /call — giden arama (çaldırma)
     if sonuc.komut_turu == "call":
         import json

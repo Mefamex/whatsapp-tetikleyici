@@ -62,6 +62,7 @@ HELP_PATTERN = re.compile(r"^/help\s*$", re.IGNORECASE)
 CAMERA_PATTERN = re.compile(r"^/camera\s*$", re.IGNORECASE)
 DURUM_PATTERN = re.compile(r"^/durum\s*$", re.IGNORECASE)
 PING_PATTERN = re.compile(r"^/ping\s*$", re.IGNORECASE)
+REACT_PATTERN = re.compile(r"^/react\s+(?P<arg>.+)$", re.IGNORECASE)
 AGENT_PATTERN = re.compile(r"^/agent(?:\s+(?P<arg>.+))?$", re.IGNORECASE)
 CALL_PATTERN = re.compile(r"^/call\s+(?P<arg>.+)$", re.IGNORECASE)
 ZAMANLA_PATTERN = re.compile(r"^/zamanla\s+(?P<arg>.+)$", re.IGNORECASE)
@@ -102,6 +103,15 @@ def parse_cmd(metin: str) -> CmdParseResult:
             komut_turu="invalid",
             hata="Geçersiz ajan motoru. Kullanım: /agent [agy|claude|opencode|durum]",
         )
+
+    # /react <emoji> [target_id]
+    react_match = REACT_PATTERN.match(metin)
+    if react_match:
+        arg = react_match.group("arg").strip()
+        parcalar = arg.split(None, 1)
+        emoji = parcalar[0]
+        target_id = parcalar[1].strip() if len(parcalar) > 1 else ""
+        return CmdParseResult(komut_turu="react", metin=emoji, hedef=target_id)
 
     # /call <jid> [süre] — giden arama (çaldırma)
     call_match = CALL_PATTERN.match(metin)
