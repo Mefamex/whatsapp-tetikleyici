@@ -110,7 +110,7 @@ if __name__ == "__main__":
 users:
   users:
     - number: ["905550000001", "12345678901234@lid"]
-      name: ["Mefamex"]
+      name: ["Admin"]
       allow_slash: true
       allow_cmd: true
       allow_camera: true
@@ -125,10 +125,10 @@ users:
     os.environ["TRIGGER_CONFIG"] = test_config
 
     testler = [
-        ("905550000001", "Mefamex", True),
-        ("12345678901234@lid", "Mefamex", True),
-        ("905550000002", "Burak", False),
-        ("", "Mefamex", False),  # numara gerekli
+        ("905550000001", "Admin", True),
+        ("12345678901234@lid", "Admin", True),
+        ("905550000002", "Misafir", False),
+        ("", "Admin", False),  # numara gerekli
         ("905550000001", "", True),
         ("", "", False),
     ]
@@ -140,5 +140,5 @@ users:
 
     # Detaylı test
     print("\nDetaylı:")
-    print(yetki_detayli("905550000001", "Mefamex"))
-    print(yetki_detayli("905550000002", "Burak"))
+    print(yetki_detayli("905550000001", "Admin"))
+    print(yetki_detayli("905550000002", "Misafir"))

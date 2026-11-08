@@ -30,6 +30,10 @@ install: ## Bağımlılıkları kurar (Go modülleri + Python uv sanal ortamı)
 		echo "==> tetikleyici.yaml bulunamadı, tetikleyici.example.yaml kopyalanıyor..."; \
 		cp tetikleyici.example.yaml tetikleyici.yaml; \
 	fi
+	@if [ ! -f pasif-kurallar.yaml ] && [ -f pasif-kurallar.example.yaml ]; then \
+		echo "==> pasif-kurallar.yaml bulunamadı, pasif-kurallar.example.yaml kopyalanıyor..."; \
+		cp pasif-kurallar.example.yaml pasif-kurallar.yaml; \
+	fi
 	@echo "==> Kurulum tamamlandı."
 
 reinstall: remove install ## Kurulu ortamı kaldırıp sıfırdan yeniden kurar

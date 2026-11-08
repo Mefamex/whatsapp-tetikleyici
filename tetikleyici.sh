@@ -25,6 +25,11 @@ if [ ! -f "$CONFIG" ] && [ -f "$PROJE/tetikleyici.example.yaml" ]; then
 	cp "$PROJE/tetikleyici.example.yaml" "$CONFIG"
 fi
 
+if [ ! -f "$PROJE/pasif-kurallar.yaml" ] && [ -f "$PROJE/pasif-kurallar.example.yaml" ]; then
+	echo "==> pasif-kurallar.yaml bulunamadı, pasif-kurallar.example.yaml kopyalanıyor..."
+	cp "$PROJE/pasif-kurallar.example.yaml" "$PROJE/pasif-kurallar.yaml"
+fi
+
 mkdir -p "$STATE"
 
 # calisiyor, çalışan tetikleyici süreçlerinin PID'lerini listeler.

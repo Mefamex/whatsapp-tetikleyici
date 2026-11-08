@@ -1,0 +1,110 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  ⏸  PASİF KURALLAR (Örnek Şablon)
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  BU DOSYA TETİKLEYİCİYE DOĞRUDAN YÜKLENMEZ. Aktif kural dosyası tetikleyici.yaml'dır
+#  ve buradaki hiçbir kural varsayılan olarak orada yoktur. Bu dosya, ihtiyaç halinde
+#  kullanılabilecek PASİF misafir kuralları şablonudur.
+#
+#  ───────────────────────────────────────────────────────────────────────
+#  ⚠️  GÜVENLİK: MİSAFİR VE DIŞ KULLANICI KURALLARI
+#  ───────────────────────────────────────────────────────────────────────
+#  Bu kuralların oturumları wp-misafir ajanını kullanır. Ajanın sınırları
+#  oturumun İÇİNDE tanımlıdır (bilgisayar ayarına dokunmaz, özel hayata
+#  dokunmaz, proje dışına çıkmaz).
+#
+#  ───────────────────────────────────────────────────────────────────────
+#  NASIL AKTİFLEŞTİRİLİR
+#  ───────────────────────────────────────────────────────────────────────
+#  1) Aşağıdaki kurallardan istediğini seç.
+#  2) tetikleyici.yaml dosyasının EN SONUNA yapıştır (rules: listesinin
+#     içine, girintisi bozulmadan).
+#  3) Numara, LID ve session ID kısımlarını kendi değerlerinle güncelle.
+#  4) Kaydet. Restart YOK — tetikleyici her mesajda config'i yeniden okur.
+#  5) Doğrula:   ./tetikleyici.sh status   → kural sayısı artmalı.
+#
+# ───────────────────────────────────────────────────────────────────────
+#  ÖRNEK KURALLAR
+# ───────────────────────────────────────────────────────────────────────
+
+rules:
+  # ── ÖRNEK MİSAFİR 1 (Ping) ───────────────────────────────────────────
+  - name: misafir1-ping
+    match:
+      number: ["905550000001", "12345678901234@lid"]
+      name: Ornek Kisi 1
+      type: text
+      text: ping
+    do:
+      - type: command
+        code: "true"
+        reply: "pong, kopru calisiyor"
+        agent: wp-misafir
+
+  # ── ÖRNEK MİSAFİR 1 (Oturum) ─────────────────────────────────────────
+  - name: misafir1-oturum
+    match:
+      number: ["905550000001", "12345678901234@lid"]
+      name: Ornek Kisi 1
+      type: text
+      not_text: ping
+    do:
+      - type: session
+        session: ses_ornek_misafir_1_session
+        reply: true
+        agent: wp-misafir
+        timeout: 12m
+
+  # ── ÖRNEK MİSAFİR 2 (Ping) ───────────────────────────────────────────
+  - name: misafir2-ping
+    match:
+      number: ["905550000002", "12345678901235@lid"]
+      name: Ornek Kisi 2
+      type: text
+      text: ping
+    do:
+      - type: command
+        code: "true"
+        reply: "buradayim"
+        agent: wp-misafir
+
+  # ── ÖRNEK MİSAFİR 2 (Oturum) ─────────────────────────────────────────
+  - name: misafir2-oturum
+    match:
+      number: ["905550000002", "12345678901235@lid"]
+      name: Ornek Kisi 2
+      type: text
+      not_text: ping
+    do:
+      - type: session
+        session: ses_ornek_misafir_2_session
+        reply: true
+        agent: wp-misafir
+        timeout: 12m
+
+  # ── ÖRNEK MİSAFİR 3 (Ping) ───────────────────────────────────────────
+  - name: misafir3-ping
+    match:
+      number: ["905550000003", "12345678901236@lid"]
+      name: Ornek Kisi 3
+      type: text
+      text: ping
+    do:
+      - type: command
+        code: "true"
+        reply: "pong, kopru calisiyor"
+        agent: wp-misafir
+
+  # ── ÖRNEK MİSAFİR 3 (Oturum) ─────────────────────────────────────────
+  - name: misafir3-oturum
+    match:
+      number: ["905550000003", "12345678901236@lid"]
+      name: Ornek Kisi 3
+      type: text
+      not_text: ping
+    do:
+      - type: session
+        session: ses_ornek_misafir_3_session
+        reply: true
+        agent: wp-misafir
+        timeout: 12m

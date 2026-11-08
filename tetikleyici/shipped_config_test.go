@@ -184,9 +184,13 @@ func TestShippedConfigHasNoGuestRules(t *testing.T) {
 // Bozuk kalan bir örnek dosya, kuralı etkinleştirme denemesini sessizce
 // başarısız yapar.
 func TestPasifKurallarDosyasiCozumlenir(t *testing.T) {
-	ham, err := os.ReadFile(filepath.Join("..", "pasif-kurallar.yaml"))
+	dosya := filepath.Join("..", "pasif-kurallar.yaml")
+	if _, err := os.Stat(dosya); os.IsNotExist(err) {
+		dosya = filepath.Join("..", "pasif-kurallar.example.yaml")
+	}
+	ham, err := os.ReadFile(dosya)
 	if err != nil {
-		t.Fatalf("pasif-kurallar.yaml okunamadı: %v", err)
+		t.Fatalf("pasif-kurallar dosyası okunamadı: %v", err)
 	}
 
 	set, err := parseConfig(ham)

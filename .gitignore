@@ -25,6 +25,7 @@ tmp/
 .env.*
 !.env.example
 tetikleyici.yaml
+pasif-kurallar.yaml
 *.local.yaml
 
 # Python venv & cache
@@ -35,9 +36,10 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 
-# Logs
+# Logs & docs
 logs/
 *.log
+docs/
 
 # IDE & OS
 .idea/
