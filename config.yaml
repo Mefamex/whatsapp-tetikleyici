@@ -1,0 +1,56 @@
+# =============================================================================
+# WhatsApp Tetikleyici (Event Dispatcher) — Yapılandırma Dosyası (config.yaml)
+#
+# YAPILANDIRMA FELSEFESİ VE ÖNCELİK SIRASI:
+# 1. Ortam Değişkenleri (ENV)    -> [EN YÜKSEK] Çalışma anında verilenler (Örn: BRIDGE_URL=http://localhost:31415)
+# 2. Bu Dosyadaki Değerler       -> [ORTA] Projeye özel çalışma ayarları
+# 3. Kod İçi Dahili Varsayılan   -> [EN DÜŞÜK] Dosya silinse bile çökmeyi önleyen emniyet değerleri
+#
+# GÜVENLİK VE STANDARTLAR:
+# - GİZLİLİK YASAĞI: Kişisel kimlikler, bot tokenları veya oturum şifreleri
+#   kesinlikle bu dosyaya yazılmaz; ortam değişkeni veya dinamik istemciden beslenir.
+# - BİRİM STANDARDI: Süre ve boyut alanlarında birim mutlaka belirtilmiştir (_sec, _min).
+# =============================================================================
+
+# --- 1. KÖPRÜ (BRIDGE SSE & API) BAĞLANTISI ---
+bridge:
+  # WhatsApp Bridge REST ve SSE API adresi
+  # Ortam değişkeni: BRIDGE_URL
+  url: "http://127.0.0.1:31415"
+
+  # SSE bağlantı zaman aşımı
+  # Ortam değişkeni: BRIDGE_TIMEOUT_SEC
+  timeout_sec: 30
+
+  # Açılışta bayat mesajların işlenmesini önleyen yaş sınırı (dakika)
+  # Ortam değişkeni: CATCHUP_MAX_AGE_MIN
+  catchup_max_age_min: 10
+
+# --- 2. BORU HATLARI VE YAPAY ZEKÂ MOTORLARI ---
+pipelines:
+  # Komut merkezi ve kabuk tüneli yürütücüsü
+  cmd_script: "tetikleyici/cmd/cmd.py"
+
+  # Görsel analiz boru hattı (Ollama / Qwen-VL)
+  gorsel_script: "gorsel_pipeline.py"
+
+  # Ses transkripsiyon boru hattı (Whisper)
+  voice_script: "voice_pipeline.py"
+
+  # Whisper modeli: tiny, base, small, medium, large-v3
+  # Ortam değişkeni: WHISPER_MODEL
+  whisper_model: "base"
+
+  # Ollama görsel modeli
+  # Ortam değişkeni: OLLAMA_VISION_MODEL
+  vision_model: "qwen2.5-vl:7b"
+
+  # Ollama model bellekte tutma süresi
+  # Ortam değişkeni: GORSEL_KEEP_ALIVE
+  keep_alive: "15m"
+
+# --- 3. GÜNLÜK VE LOGLAMA ---
+logging:
+  # Detay seviyesi: DEBUG, INFO, WARN, ERROR
+  # Ortam değişkeni: TETIKLEYICI_LOG_LEVEL
+  level: "INFO"

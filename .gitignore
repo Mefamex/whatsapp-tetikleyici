@@ -1,0 +1,46 @@
+# Binaries
+bin/
+tetikleyici/tetikleyici
+tetikleyici.bin
+
+# Runtime tunnel & dynamic states (CRITICAL)
+.tetikleyici/
+*.state
+*.json.tmp
+
+# Output & temp media
+whatsapp-cmd/
+tmp/
+*.tmp
+*.wav
+*.ogg
+*.opus
+*.mp4
+*.jpg
+*.jpeg
+*.png
+
+# Environment & secrets
+.env
+.env.*
+!.env.example
+
+# Python venv & cache
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+
+# Logs
+logs/
+*.log
+
+# IDE & OS
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.directory

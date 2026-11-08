@@ -1,0 +1,342 @@
+# ═══════════════════════════════════════════════════════════════════════
+#  AÇIK OLAN ÖZELLİKLER  (MEVZU Aşama 2 — 2026-10-06)
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  Her boolean izin koda "false default" ile girer (MEVZU Aşama 1) ve bu
+#  blok, hangisinin CANLI'da açık olduğunu tek bakışta söyler. Kapatmak =
+#  ilgili satırı false yap; açmak = true yap. Restart GEREKMEZ.
+#
+#    ✅ AÇIK
+#      reply: true, send_seen: true            → cevap + mavi tik
+#      allow_help / allow_cmd / allow_durum    → /help · /cmd · /durum
+#      allow_camera                            → /camera (kamera_izni gerekir)
+#      allow_gorsel / allow_ses / allow_belge  → görsel · ses · belge hatları
+#      notify.on_start / on_stop: true         → köprü açılış/kapanış bildirimi
+#      heartbeat (session + mesaj, aşağıda)    → 15 dk sessizliği 1 dk'da bir uyarır
+#      zamanlanmis_mesaj.acik: TRUE (aşağıda)  → /zamanla aktif
+#
+#    🌙 KAPALI (dikkat: kapalı = SESSİZ, "kapalıyım" cevabı YOK)
+#      zamanlanmis_mesaj.acik: false (varsayılan) → /zamanla "kapalı" der
+#      (Aşama 3: çalışma anında /zamanla aç | kapat ile de değişir)
+#      tehlikeli_mesaj.acik: false (varsayılan)   → tanınmayan şüpheli
+#      mesaj uyarısı kapalı (açınca admine bilgi gider, yanıt DEĞİLDİR)
+#
+#    ❓ /reply (durum kodu, ayarı yok): ajan soru sorunca bekleyen cevap
+#      numarası .tetikleyici/bekleyen_cevaplar.txt'e yazılır; kullanıcı
+#      /reply N <cevap> ile yanıtlar. 10 dk zaman aşımı var: süresi dolan
+#      numara serbest bırakılır (damga dosyası <.zaman>, uyarı günlükte).
+#
+# ═══════════════════════════════════════════════════════════════════════
+#  TETİKLEYİCİ KURALLARI
+# ═══════════════════════════════════════════════════════════════════════
+#
+#  Her mesajda yeniden okunur — düzenle, kaydet, bitti. Restart yok.
+#  start · status · log 50   →   ./tetikleyici.sh
+#
+#  📖 TÜM OPSİYONLAR, KOŞULLAR, ÖRNEKLER ve TUZAKLAR:
+#     → config.readme.md
+#
+#  ───────────────────────────────────────────────────────────────────────
+#  İKİ KURAL — en çok bunlar bozulur
+# ───────────────────────────────────────────────────────────────────────
+#
+#  1) KENDİ MESAJLARIN ASLA TETİKLEMEZ.  (direction=out olanlar elenir.)
+#
+#  2) number/wp_number ÖNCELİKLİ OR; text/type ise AND.
+#     LID TÜRETİLEMEZ — telefon 905551234567, LID 12345678901234...
+#     tamamen başka bir sayı. LID'li sohbet için İKİSİNİ de yaz.
+#
+#  3) KURAL YOKSA CEVAP YOK.  Sessizlik kasıtlıdır, hata değil.
+#     "Şu an kapalıyım" gibi otomatik cevap KONULMAZ — kullanıcı
+#     bunu açıkça reddetti. Bkz. aşağıdaki ⛔ bloğu ve config.readme.md
+#
+# ───────────────────────────────────────────────────────────────────────
+#  AYARLAR
+# ───────────────────────────────────────────────────────────────────────
+
+# opencode eylemlerinin çağırdığı program.
+# Oturum kimliği:   opencode session list
+opencode: ~/.opencode/bin/opencode
+
+# Gelen her mesajı okundu işaretle (mavi tik) — varsayılan: false
+# NOT: type: opencode kuralı bunu KENDİ send_seen bayrağıyla ezer.
+okundu_isaretle: false
+
+# Her cevabın sonuna "🤖 AI asistanı" ekle — varsayılan: false
+# NOT: type: opencode kuralı bunu KENDİ add_aitag bayrağıyla ezer.
+ai_eti_ekle: false
+
+# opencode'nin ham stdout/stderr'ini (düşünce süreci, ara mesajlar dahil)
+# doğrudan WhatsApp'a gönder — varsayılan: false
+# NOT: type: opencode kuralı bunu KENDİ do_debug bayrağıyla ezer ve
+#      düşünce/tool çıktısını YİNE de eler (bkz. aşağıdaki kural).
+debug_cikti: false
+
+# Bilgisayar kamerasından tek kare çekip mefamex'e gönderme izni.
+# Varsayılan: false (KAPALI — kamera mahremiyeti gereği bilinçli açılır).
+# true = `/camera` komutu çalışır; false = "izin kapalı" cevabı gider.
+kamera_izni: true
+
+# Kurtarma taramasında (catch-up) bu süreden eski birikmiş mesajları atla.
+# Tetikleyici kapalıyken gelen çok eski mesajların açılışta birden cevaplanıp
+# spam yapmasını önler. Örnek: 10m, 15m, 1h. Varsayılan: 10m.
+catchup_max_age: 10m
+
+# ── users: 3 aşamalı yetki modeli (2026-10-07) ───────────────────────────
+# 1) Kişi config'de var mı? (users listesinde number/name eşleşmesi)
+# 2) O kişinin `/` mesajlarına yetkisi var mı? (allow_slash)
+# 3) O kişinin özel komut yetkileri (allow_cmd, allow_camera, allow_durum…)
+# YALNIZ listedeki kişiler yetkili sayılır; kural eşleşmesi 1. adımı zaten sağlar.
+users:
+  users:
+    - number: ["905551234567", "12345678901234@lid"]
+      name: ["Mefamex"]
+      allow_slash: true
+      allow_cmd: true
+      allow_camera: true
+      allow_durum: true
+      allow_zamanla: true
+      allow_reply: true
+
+# ── zamanlanmis_mesaj: "şu zaman sonra şu mesajı gönder" ─────────────────
+# Kural değildir — gönderim tetikleyicinin kendi sürecinde gerçekleşir.
+#   /zamanla 10dk su iç      → 10 dk sonra "su iç" gönderilir
+#   /zamanla 22:30 uyku      → bugün 22:30'da (geçtiyse yarın) gönderilir
+#   /zamanla list            → bekleyen işler
+#   /zamanla iptal <id>      → işi sil
+# Süreler: sn, dk, sa/saat, gun/gün · 1 dk – 7 gün. İşler restart'a dayanır
+# (.tetikleyici/zamanlanmis/). Gönderilemezse 1 dk nefesle 3 deneme, sonra
+# iptal. Varsayılan: false (KAPALI — bilinçli açılır).
+zamanlanmis_mesaj:
+  acik: true
+
+# ── tehlikeli_mesaj: tanınmayan kaynaklardan şüpheli mesaj uyarısı ──────
+# Kural DEĞİLDİR ve YANIT DEĞİLDİR: gelen numaraya hiçbir şey gönderilmez.
+# Kurallarda TANINMAYAN (mefamex dışı, isim olarak da tanınmayan) bir
+# numaradan link içeren metin VEYA dosya/medya eki gelirse kısa bir uyarı
+# yalnız `to`'daki adrese gider.
+#
+# ⛔ "Kapalı hat sessizdir" korunur: Burak/Yusuf/Masha'dan gelen NORMAL
+#    mesajlar uyarı doğurmaz (onlar kurallarda tanınır). Uyarı yanıt
+#    değildir, kimseye geri yazılmaz.
+#
+# Spam koruması: aynı numaradan uyarılar arası `aralik` (varsayılan 1s).
+# Varsayılan: false (KAPALI — bilinçli açılır; MEVZU Aşama 1).
+tehlikeli_mesaj:
+  acik: false
+  to: "12345678901234@lid"
+  aralik: "1h"
+
+# ── notify: tetikleyicinin KENDİ olay bildirimleri ──────────────────────
+# Kural değildir — mesaj eşleşmesiyle ilgisi yoktur. Açılış, kapanış,
+# köprü düşüşü/kalkışı ve config değişiminde yalnız `to`'ya haber verir.
+#
+# ⛔ KENDİ NUMARANI (905550000005) BURAYA YAZMA. Gönderim yalnız bu
+#    listeye gider; kendine bildirim anlamsızdır (köprü düştüyse zaten
+#    gönderemez).
+# ⛔ AYNI KİŞİ İÇİN HEM TELEFON HEM LID YAZMA → her bildirim 2 kanaldan
+#    gider (canlı ölçüldü 2026-10-06: "2'şer kere mesaj geldi" şikâyetinin
+#    sebebi buydu). Tek kimlik kullan: LID (most 1:1 chats open under LID).
+#
+# Spam koruması (tasarlanmış, değiştirilebilir):
+#   · Aynı tür, throttle (5m) içinde bir daha gitmez — dosyada tutulur:
+#     .tetikleyici/bildirim.txt → RESTART'TA DA HATIRLANIR.
+#   · Köprü bağlı değilse max_retry (10) kez retry (30s) ile denenir,
+#     sonra günlüğe yazılıp vazgeçilir. Başarısız gönderim damgalanmaz.
+notify:
+  to: ["12345678901234@lid"]
+  on_start: true
+  on_stop: true
+  on_bridge_up: true
+  on_bridge_down: true
+  on_config_change: true
+  throttle: 5m
+  retry: 30s
+  max_retry: 10
+
+# ── heartbeat: sessiz sohbeti uyarır (ONAYLI 2026-10-07) ────────────────
+# Kural DEĞİLDİR; "hat açık mı" testi de değildir (onu /ping yapar).
+# Ölçüt TRAFİKTİR: sohbette son idle (15 dk) süre HİÇ mesaj yoksa (gelen
+# VEYA giden) `mesaj` ajanın SABİT oturumuna verilir; ajanın cevabı kendi
+# kuralı üzerinden sohbete düşer (reply yolundan). Cevap trafik sayılır,
+# bu yüzden döngü kendiliğinden kırılır (aktif sohbette tekrar tetiklenmez).
+# Eşik/sıklık (15m/1m) ve MESAJ sahibin verdiği değerler (03:33 + 2026-10-07
+# onayı). Kapatmak = `session:` satırını silmek (boşsa heartbeat kapalıdır;
+# restart GEREKMEZ — her tur config yeniden okunur).
+heartbeat:
+  to: ["12345678901234@lid"]
+  session: ses_ef8590662ffeRSLXLL2R8VhJfM   # mefamex-oturum'un sabit oturumu
+  idle: 15m
+  every: 1m
+  mesaj: "admin ile konuşman bir süredir durağan. ona mesaj atman gerekiyorsa at"
+
+# ⚠️ $TRIGGER_ID = mesaj KİMLİĞİ.  {mesajlar} META'dır, /media ucu
+#    kimlik ister → orada 404 alırsın. Bu canlıda oldu.
+
+
+rules:
+  # ═══════════════════════════════════════════════════════════════════
+  # ── TEK KİŞİ · TEK KURAL ───────────────────────────────────────────────
+  #  2026-10-06'da yazıldı. Öncesinde AYNI numara için 6 ayrı kural vardı
+  #  (mefamex-oturum, -ping, -sesli-not, -gorsel, -cmd, -belge). Sorunlar:
+  #
+  #   • Aynı kimlik 6 kez yazılıyordu; numara değişse 6 yer de değişmeliydi.
+  #   • "Yeni yetenek eklemek" = yeni kural demekti; yanlış yazılan bir
+  #     koşul (örn. mefamex-gorsel'e `text:` eklemek) o hatta giden mesajı
+  #     sessizce öldürüyordu.
+  #   • "ping" istisnası not_text ile 3 ayrı kurala serpilmişti; artık
+  #     gereksiz (/help aynı işi görüyor).
+  #
+  #  Yeni düzen: EŞLEŞTİRME burada (kimin mesajı), YÖNLENDİRME eylemin
+  #  kendi içinde (ne tür mesaj → hangi hat). Tek kural, tek kimlik.
+  #
+  #  `wp_number` / `wp_name`: `number` / `name` alanlarının okunur adı.
+  #  İkisi de yazılabilir, aynı listeye birleştirilir. "wp_" öneki alanın
+  #  nereye ait olduğunu tek bakışta söylüyor (whatsapp number / name).
+  # ═══════════════════════════════════════════════════════════════════
+  - name: mefamex
+    match:
+      wp_number: ["905551234567", "12345678901234@lid"]
+      wp_name: Mefamex
+    do:
+      - type: opencode       # oturum + hat yönlendirmesi, tek eylemde
+
+        # ── AJAN ──────────────────────────────────────────────────────
+        session: ses_ef8590662ffeRSLXLL2R8VhJfM   # opencode session list
+        agent: wp-sahip    # sahibin oturumu: gönderim aracı kapalı → çift gönderim olmaz
+        timeout: 12m        # uzun işler için (varsayılan 3m)
+        reply: true          # ajanın cevabı sohbete gider
+        # NOT: reply şu an sıkıntılı çalışıyor — doğrudan oturum çıktısını
+        # canlı yayınlamak yerine geçici çözüm. Kaldırılması planlı.
+
+        # ── BU KURALA ÖZEL BAYRAKLAR ─────────────────────────────────
+        # Yazılırsa global ayarları (okundu_isaretle, ai_eti_ekle,
+        # debug_cikti) geçersiz kılar; yazılmazsa global geçerli.
+        send_seen: true      # mesajı okundu işaretle (mavi tik)
+        add_aitag: false     # cevabın sonuna "🤖 AI asistanı" EKLEME
+        do_debug: false      # ajanın ARA MESAJLARINI gönderme
+
+        # ── HATLAR ────────────────────────────────────────────────────
+        # Aşağıdaki üç betik, mesajın TÜRÜne göre otomatik argüman alır.
+        #   cmd    → <cmd>    "$TRIGGER_TEXT" "$TRIGGER_JID" "$TRIGGER_NAME"
+        #   gorsel → <gorsel> "$TRIGGER_ID"
+        #   ses    → <ses>    "$TRIGGER_ID"
+        cmd: tetikleyici/cmd/cmd.py
+        gorsel: gorsel_pipeline.py
+        ses: voice_pipeline.py
+
+        # ── YETKİLER ──────────────────────────────────────────────────
+        # Her bayrak bir yeteneği açar. Kapalı yeteneğe düşen mesaj
+        # SESSİZCE geçilir: ne cevap gider, ne ajan uyarılır.
+        allow_help: true     # /help        → ne yapabiliyorum?
+        allow_cmd: true      # /cmd, /ping…  → kabuk komutu çalıştır
+        allow_durum: true    # /durum       → köprü + tetikleyici sağlığı
+        allow_camera: true   # /camera      → bilgisayar kamerası (kamera_izni gerekir)
+        allow_gorsel: true   # fotoğraf · video · sticker → gorsel_pipeline.py
+        allow_ses: true      # sesli not    → voice_pipeline.py (Türkçeye çevirir)
+        allow_belge: true    # PDF · DOCX · XLSX → gorsel_pipeline.py
+        allow_reaction: true # emoji tepkisi (👍 ❤️ 😂) → ajana gider
+
+
+# ═══════════════════════════════════════════════════════════════════════
+
+# ───────────────────────────────────────────────────────────────────────
+#  HAT HARİTASI (type: opencode yönlendirmesi)
+# ───────────────────────────────────────────────────────────────────────
+#
+#   mesaj tipi        →  hat                 izni
+#   ────────────────────────────────────────────────────────────────
+#   text              →  opencode oturumu    (her zaman)
+#   extended_text     →  opencode oturumu    (her zaman)
+#   poll              →  opencode oturumu    (her zaman)
+#   reaction (emoji)  →  opencode oturumu    allow_reaction
+#   text "/help"      →  cmd.py              allow_help
+#   text "/durum"     →  cmd.py              allow_durum
+#   text "/camera"    →  cmd.py              allow_camera
+#   text "/başka"     →  cmd.py              allow_cmd
+#   image             →  gorsel_pipeline.py  allow_gorsel
+#   video             →  gorsel_pipeline.py  allow_gorsel
+#   sticker           →  gorsel_pipeline.py  allow_gorsel
+#   document          →  gorsel_pipeline.py  allow_belge
+#   audio             →  voice_pipeline.py   allow_ses
+#   protocol · poll_update · noPayload · unknown  →  (sessiz)
+#
+#   ⚠️ "/" ile başlayan metin AJANA GİTMEZ, komut hattına gider.
+#      İzni kapalıysa da ajana düşmez — "kapalı" demek "sessiz" demektir.
+
+# ───────────────────────────────────────────────────────────────────────
+#  TÜM OPSİYONLAR — tek örnek. Ayrıntı ve daha çok örnek: config.readme.md
+# ───────────────────────────────────────────────────────────────────────
+#
+#   - name: örnek
+#     match:
+#       wp_number: ["905551234567", "12345678901234@lid"]  # öncelikli OR
+#       name: [Mefamex, Yusuf]           # öncelikli OR
+#       text: müfredat                  # AND  metin içermeli
+#       not_text: ping                  # AND  "ping" varsa kural TUTMAZ
+#       type: [audio, image]            # AND  sesli not | fotoğraf
+#       group: true                     # AND  yalnız gruplar
+#       everyone: true                  # koşulsuz, her mesaj
+#     do:
+#       - type: command                # kabuk komutu / script
+#         code: ~/bin/kaydet.sh "$TRIGGER_ID"
+#         reply: "kaydedildi"          # sabit metin (stdout yok sayılır)
+#         timeout: 30s                  # kural > bayrak > varsayılan 3m
+#       - type: session                # sabit opencode oturumu
+#         session: ses_XXX
+#         reply: true                  # çıktıyı sohbete gönder
+#         agent: wp-sahip              # ajan AÇILIR; yoksa stdout doğrudan cevap
+#         timeout: 12m
+#       - type: new_session            # her seferinde yeni oturum
+#         reply: true
+#
+#   # ── type: opencode — TEK KİŞİ, TEK KURAL ────────────────────────────
+#   - name: mefamex
+#     match:
+#       wp_number: ["905551234567", "12345678901234@lid"]
+#       wp_name: Mefamex
+#     do:
+#       - type: opencode
+#         session: ses_XXX               # ZORUNLU
+#         agent: wp-sahip
+#         timeout: 12m
+#         reply: true
+#         send_seen: true               # global okundu_isaretle'yi ezer
+#         add_aitag: false              # global ai_eti_ekle'yi ezer
+#         do_debug: false               # global debug_cikti'yi ezer
+#         cmd: ~/proj/cmd/cmd.py        # allow_* komutları için ZORUNLU
+#         gorsel: ~/proj/gorsel.py      # allow_gorsel/allow_belge için ZORUNLU
+#         ses: ~/proj/ses.py            # allow_ses için ZORUNLU
+#         allow_help: true
+#         allow_cmd: true
+#         allow_durum: true
+#         allow_camera: true
+#         allow_gorsel: true
+#         allow_ses: true
+#         allow_belge: true
+#         allow_reaction: true
+
+#  ───────────────────────────────────────────────────────────────────────
+#  ⛔  SESSİZLİK KASITLIDIR
+# ───────────────────────────────────────────────────────────────────────
+#
+#  Kapalı kuralın karşılığı cevap değil, HİÇBİR ŞEYDİR.
+#  "Şu an kapalıyım" / "mefamex'e yaz" / ping karşılığı — hiçbiri konulmaz.
+#  Kullanıcı 2026-10-06'da bunu öneren çözümü kesinlikle reddetti.
+#  Gerekçe: config.readme.md § "Sessizlik kasıtlıdır" · NOTES.md madde 31
+#
+#  type: opencode'te allow_* bayrağı kapalıysa AYNI kural geçerlidir:
+#  kapalı hat ne "yapamıyorum" der ne de ajanı uyarır.
+
+
+# ───────────────────────────────────────────────────────────────────────
+#  ⏸  PASİF KURALLAR (Burak · Yusuf · Masha) — AYRI DOSYADA
+# ───────────────────────────────────────────────────────────────────────
+#  Bu 6 kural tetikleyici'ye YÜKLENMEZ ve bu dosyada BULUNMAZ.
+#  Yerleri:  pasif-kurallar.yaml
+#  Adımlar ve gerekçe: config.readme.md § 6
+#
+#  Neden ayrı dosya: burada yorum içinde taşınan ~120 satırlık kural
+#  bloğu, config'i okunamaz hâle getiriyordu ve kazara etkinleştirme
+#  riski taşıyordu (tek bir "# " silinmesi kuralı canlandırıyordu).
+#  Ayrı dosyada kurallar GERÇEKTEN yazılıdır: kopyala-yapıştır tek iş.
