@@ -86,6 +86,7 @@ func TestTekKuralEskiKurallarinHepsiniKapsar(t *testing.T) {
 		{"audio", "", "ses hattı"},
 		{"document", "", "belge hattı"},
 		{"reaction", "👍", "reaksiyon → oturum"},
+		{"poll_vote", "Seçenek A", "anket oyu → oturum"},
 	}
 
 	for _, tc := range vakalar {
@@ -299,7 +300,7 @@ func TestNewSessionOturumSabitlemez(t *testing.T) {
 
 func TestWpNumberWpNameTekKaynagaBirlesir(t *testing.T) {
 	var c condition
-	c.WPNumber = stringList{"905551234567", "12345678901234@lid"}
+	c.WPNumber = stringList{"905550000001", "12345678901234@lid"}
 	c.WPName = stringList{"Mefamex"}
 	c.normalize()
 
@@ -316,11 +317,11 @@ func TestWpNumberWpNameTekKaynagaBirlesir(t *testing.T) {
 
 func TestEskiNumberYazimiCalismayaDevamEder(t *testing.T) {
 	var c condition
-	c.Numbers = stringList{"905551234567"}
+	c.Numbers = stringList{"905550000001"}
 	c.WPNumber = stringList{"12345678901234@lid"}
 	c.normalize()
 
-	if got := strings.Join(c.Numbers, ","); got != "905551234567,12345678901234@lid" {
+	if got := strings.Join(c.Numbers, ","); got != "905550000001,12345678901234@lid" {
 		t.Errorf("Numbers = %q", got)
 	}
 }
@@ -333,7 +334,7 @@ opencode: ~/.opencode/bin/opencode
 rules:
   - name: mefamex
     match:
-      wp_number: ["905551234567", "12345678901234@lid"]
+      wp_number: ["905550000001", "12345678901234@lid"]
       wp_name: Mefamex
     do:
       - type: opencode
@@ -392,7 +393,7 @@ func TestYazimHatasiYineReddedilir(t *testing.T) {
 rules:
   - name: hatali
     match:
-      wp_nubmer: ["905551234567"]
+      wp_nubmer: ["905550000001"]
     do:
       - type: command
         code: "true"
@@ -469,6 +470,13 @@ func TestTekMetinliAlandaAraMesajYoktur(t *testing.T) {
 func TestJSONOlamazsaHamCiktiDoner(t *testing.T) {
 	if got := sonCevap("düz metin cevap\n", nil); got != "düz metin cevap" {
 		t.Errorf("ham çıktı = %q", got)
+	}
+}
+
+func TestHataJSONCevapSanilmaz(t *testing.T) {
+	hata := `{"type":"error","timestamp":1794100326509,"sessionID":"ses_ef8590662ffeRSLXLL2R8VhJfM","error":{"type":"provider.no-route","message":"Model unavailable: opencode/nemotron-3-ultra-free"}}`
+	if got := sonCevap(hata, nil); got != "" {
+		t.Errorf("hata JSON çıktısı boş metin dönmeli, got %q", got)
 	}
 }
 

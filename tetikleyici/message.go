@@ -68,6 +68,9 @@ func (m message) label() string {
 // "[unsupported: X]" olarak saklarsa kullanıcı bunu görür ama mesajın gerçekten
 // boş olduğunu sanmaz.
 func (m message) readableText() string {
+	if m.Type == "poll_vote" && strings.TrimSpace(m.Text) != "" {
+		return fmt.Sprintf("[Anket Oyu: %s]", m.Text)
+	}
 	if text := strings.TrimSpace(m.Text); text != "" {
 		return text
 	}

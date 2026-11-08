@@ -53,7 +53,7 @@ func TestConditionTypeIsCaseInsensitiveAndListable(t *testing.T) {
 
 func TestConditionTypeCombinesWithNumberAndText(t *testing.T) {
 	// number + type birlikte AND'lanır: sesli not Mefamex'ten gelmeli.
-	c := condition{Numbers: stringList{"905551234567"}, Types: stringList{"audio"}}
+	c := condition{Numbers: stringList{"905550000001"}, Types: stringList{"audio"}}
 
 	// LID sohbetinde numara payload'da yok → kural tutmamalı.
 	if c.matches(voiceMessage()) {
@@ -62,8 +62,8 @@ func TestConditionTypeCombinesWithNumberAndText(t *testing.T) {
 
 	// numara biçiminde açılan sohbet → tutar.
 	numeric := message{
-		ID: "V2", Type: "audio", From: "905551234567@s.whatsapp.net",
-		Sender: "905551234567@s.whatsapp.net", PushName: "Mefamex", Direction: "in",
+		ID: "V2", Type: "audio", From: "905550000001@s.whatsapp.net",
+		Sender: "905550000001@s.whatsapp.net", PushName: "Mefamex", Direction: "in",
 	}
 	if !c.matches(numeric) {
 		t.Error("number + type should match a phone-format chat")

@@ -90,7 +90,7 @@ def kullanici_tunel_al(gonderen: str) -> Dict[str, Any]:
     if anahtar in durumlar:
         return durumlar[anahtar]
 
-    # Numara veya @ sonrası eşleşme ara (örn: 905551234567 vs 905551234567@s.whatsapp.net)
+    # Numara veya @ sonrası eşleşme ara (örn: 905550000001 vs 905550000001@s.whatsapp.net)
     temiz = anahtar.split("@")[0]
     for k, v in durumlar.items():
         if k.split("@")[0] == temiz:

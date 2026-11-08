@@ -39,7 +39,7 @@ func tunelDurumuAl(from string) (mod string, sessionID string) {
 		}
 	}
 
-	// 2. Numara kısmı eşleşmesi (örn. 905551234567@s.whatsapp.net -> 905551234567)
+	// 2. Numara kısmı eşleşmesi (örn. 905550000001@s.whatsapp.net -> 905550000001)
 	temizFrom := strings.Split(from, "@")[0]
 	for k, v := range durumlar {
 		if strings.Split(k, "@")[0] == temizFrom {

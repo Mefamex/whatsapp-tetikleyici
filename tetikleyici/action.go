@@ -504,6 +504,9 @@ func bosCiktiSebebi(ctx context.Context, err error) string {
 	case strings.Contains(metin, "Rate limit"), strings.Contains(metin, "rate limit"):
 		return "Model şu an yük altında (rate limit). Biraz sonra tekrar dene."
 
+	case strings.Contains(metin, "Model unavailable"), strings.Contains(metin, "provider.no-route"), strings.Contains(metin, "no-route"):
+		return "Model sağlayıcı tarafında geçici olarak erişilemez durumda. Model ayarı kontrol edilmelidir."
+
 	case strings.Contains(metin, "context canceled"):
 		return "Bağlantı koptu, istek tamamlanamadı. Tekrar yazabilirsin."
 
@@ -893,7 +896,13 @@ func metinParcalari(ham string) []string {
 func sonCevap(ham string, araMesaj func(string)) string {
 	parcalar := metinParcalari(ham)
 	if len(parcalar) == 0 {
-		return strings.TrimSpace(ham)
+		kirpilmis := strings.TrimSpace(ham)
+		// Ham çıktı bir JSON hata nesnesi ise (örn. {"type":"error",...}),
+		// bu bir sohbet cevabı değildir; kullanıcıya ham hata JSON'ı gönderilmez.
+		if strings.HasPrefix(kirpilmis, "{\"type\":\"error\"") || strings.Contains(kirpilmis, `"error":{`) {
+			return ""
+		}
+		return kirpilmis
 	}
 
 	if araMesaj != nil {

@@ -36,7 +36,7 @@ func supheliEngine(t *testing.T, acik bool, to, aralik string) *engine {
 		aralikSatir +
 		"rules:\n" +
 		"- name: mefamex\n" +
-		"  match: { number: [\"905551234567\", \"12345678901234@lid\"] }\n" +
+		"  match: { number: [\"905550000001\", \"12345678901234@lid\"] }\n" +
 		"  do: [ { type: command, code: \"true\" } ]\n"
 	return newEngine(writeRules(t, body), testOptions())
 }
@@ -79,8 +79,8 @@ func TestSupheliSinyalEk(t *testing.T) {
 // ── taninanKimlik ─────────────────────────────────────────────────────
 
 func TestSupheliTaninanKimlikNumara(t *testing.T) {
-	set := ruleSet{Rules: []rule{{Match: condition{Numbers: []string{"905551234567"}}}}}
-	m := supheliMesaj("m1", "text", "905551234567@s.whatsapp.net", "link http://x.com", "")
+	set := ruleSet{Rules: []rule{{Match: condition{Numbers: []string{"905550000001"}}}}}
+	m := supheliMesaj("m1", "text", "905550000001@s.whatsapp.net", "link http://x.com", "")
 	if !taninanKimlik(set, m) {
 		t.Error("kuralda yazılı numara tanınmalı")
 	}
@@ -95,7 +95,7 @@ func TestSupheliTaninanKimlikIsim(t *testing.T) {
 }
 
 func TestSupheliTaninanKimlikBilinmeyen(t *testing.T) {
-	set := ruleSet{Rules: []rule{{Match: condition{Numbers: []string{"905551234567"}}}}}
+	set := ruleSet{Rules: []rule{{Match: condition{Numbers: []string{"905550000001"}}}}}
 	m := supheliMesaj("m1", "text", "905123456789@s.whatsapp.net", "link http://x.com", "Yabancı")
 	if taninanKimlik(set, m) {
 		t.Error("kuralda olmayan numara tanınmamalı")
@@ -184,7 +184,7 @@ func TestSupheliTaninanKimliktenGitmez(t *testing.T) {
 	e := supheliEngine(t, true, "12345678901234@lid", "")
 
 	e.supheliUyari(context.Background(), client, e.rules(),
-		supheliMesaj("m1", "text", "905551234567@s.whatsapp.net", "http://x.com", "Mefamex"))
+		supheliMesaj("m1", "text", "905550000001@s.whatsapp.net", "http://x.com", "Mefamex"))
 
 	if len(fake.sent) != 0 {
 		t.Errorf("tanınan kimlikten uyarı gitmemeli: %+v", fake.sent)

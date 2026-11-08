@@ -212,7 +212,7 @@ func matchingRules(set ruleSet, m message) []rule {
 //
 // Yalnız config'de **açıkça yazılmış** sohbetler taranır. Çıplak rakamdan yalnız
 // telefon biçimi üretilir; LID biçimi türetilemez, çünkü LID tamamen farklı bir
-// kimlik uzayıdır (telefon 905551234567 → LID 12345678901234 gibi). Uydurma bir
+// kimlik uzayıdır (telefon 905550000001 → LID 12345678901234 gibi). Uydurma bir
 // LID taramak hiçbir işe yaramaz ve kullanıcıya kapsama varmış izlenimi verir.
 //
 // LID kullanan sohbetler config'te tam kimlikle yazılmalı, ya da canlı trafikle

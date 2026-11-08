@@ -181,6 +181,37 @@ def ana(metin: str, gonderen_numara: str, gonderen_isim: str) -> str:
     if sonuc.komut_turu == "ping":
         return "pong 🏓"
 
+    # /sil veya /revoke — alıntılanan mesajı herkesten sil
+    if sonuc.komut_turu == "revoke":
+        import json
+        import urllib.request
+
+        target_id = (
+            sonuc.hedef
+            or os.getenv("TRIGGER_QUOTED_ID", "")
+            or os.getenv("TRIGGER_ID", "")
+        )
+        if not target_id:
+            return "Hata: Silinecek mesaj bulunamadı (silmek istediğin mesaja sağa çekip /sil yazabilirsin)."
+
+        url = "http://127.0.0.1:31415/revoke"
+        data = json.dumps({"to": gonderen_numara, "message_id": target_id}).encode(
+            "utf-8"
+        )
+        req = urllib.request.Request(
+            url,
+            data=data,
+            headers={"Content-Type": "application/json"},
+            method="POST",
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=10) as resp:
+                if resp.status == 200:
+                    return "🗑️ Mesaj silindi."
+                return f"Köprü hatası: {resp.status}"
+        except Exception as e:
+            return f"Mesaj silinemedi: {e}"
+
     # /agent — aktif ajan motorunu göster / değiştir (agy, claude, opencode)
     if sonuc.komut_turu == "agent":
         return agent_yonet(sonuc.kod)
@@ -210,39 +241,6 @@ def ana(metin: str, gonderen_numara: str, gonderen_isim: str) -> str:
         return cmdhub_yonet(
             sonuc.alt_komut, sonuc.hedef or sonuc.kod, gonderen_numara, debug_cikti
         )
-
-    # /react <emoji> [target_id]
-    if sonuc.komut_turu == "react":
-        import json
-        import urllib.request
-
-        emoji = sonuc.metin
-        # Hedef ID: önce argüman, sonra alıntılanan mesaj (TRIGGER_QUOTED_ID), yoksa son tetikleyen (TRIGGER_ID)
-        target_id = (
-            sonuc.hedef
-            or os.getenv("TRIGGER_QUOTED_ID", "")
-            or os.getenv("TRIGGER_ID", "")
-        )
-        if not target_id:
-            return "Hata: Tepki verilecek mesaj ID'si bulunamadı (bir mesaja sağa çekip /react <emoji> yazabilirsin)."
-
-        url = "http://127.0.0.1:31415/reaction"
-        data = json.dumps(
-            {"to": gonderen_numara, "message_id": target_id, "emoji": emoji}
-        ).encode("utf-8")
-        req = urllib.request.Request(
-            url,
-            data=data,
-            headers={"Content-Type": "application/json"},
-            method="POST",
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                if resp.status == 200:
-                    return f"Tepki eklendi: {emoji}"
-                return f"Köprü hatası: {resp.status}"
-        except Exception as e:
-            return f"Reaksiyon gönderilemedi: {e}"
 
     # /call — giden arama (çaldırma)
     if sonuc.komut_turu == "call":
@@ -396,7 +394,7 @@ if __name__ == "__main__":
     # Test modu: python3 cmd.py "<komut>" "<numara>" "<isim>"
     if len(sys.argv) >= 2:
         test_metin = sys.argv[1]
-        test_numara = sys.argv[2] if len(sys.argv) > 2 else "905551234567"
+        test_numara = sys.argv[2] if len(sys.argv) > 2 else "905550000001"
         test_isim = sys.argv[3] if len(sys.argv) > 3 else "Mefamex"
         print(ana(test_metin, test_numara, test_isim))
     else:
@@ -406,7 +404,7 @@ if __name__ == "__main__":
         while True:
             try:
                 metin = input("> ")
-                print(ana(metin, "905551234567", "Mefamex"))
+                print(ana(metin, "905550000001", "Mefamex"))
                 print("---")
             except (EOFError, KeyboardInterrupt):
                 break

@@ -26,7 +26,7 @@ from pathlib import Path
 
 BRIDGE_BASE = os.getenv("BRIDGE_BASE", "http://127.0.0.1:31415")
 KAMERA_CIHAZI = os.getenv("KAMERA_CIHAZI", "/dev/video0")
-KAMERA_ALICI = os.getenv("KAMERA_ALICI", "905551234567")
+KAMERA_ALICI = os.getenv("KAMERA_ALICI", "905550000001")
 KAMERA_TIMEOUT = int(os.getenv("KAMERA_TIMEOUT", "20"))
 
 

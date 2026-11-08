@@ -95,7 +95,7 @@ func beklemeKur(t *testing.T, betik string) (*engine, *bridgeClient, *fakeBridge
 	return newEngine(config, opts), client, fake
 }
 
-const beklemeSohbet = "905551234567@s.whatsapp.net"
+const beklemeSohbet = "905550000001@s.whatsapp.net"
 
 func beklemeMesaj(id, metin string) message {
 	return message{

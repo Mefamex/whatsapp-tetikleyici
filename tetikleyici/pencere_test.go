@@ -31,7 +31,7 @@ func pencereMesaji(ts int64, id, text string, benden bool) message {
 	if benden {
 		m.Direction = "out"
 		m.IsFromMe = true
-		m.From = "905551234567@s.whatsapp.net"
+		m.From = "905550000001@s.whatsapp.net"
 	}
 	return m
 }
@@ -77,7 +77,7 @@ debug_cikti: false
 rules:
   - name: mefamex
     match:
-      wp_number: ["905551234567", "12345678901234@lid"]
+      wp_number: ["905550000001", "12345678901234@lid"]
       wp_name: Mefamex
     do:
       - type: opencode

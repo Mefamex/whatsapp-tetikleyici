@@ -114,7 +114,7 @@ func (t tehlikeliConfig) enabled() bool {
 
 // userConfig, kullanıcı başına yetki ayarları.
 type userConfig struct {
-	// Numbers, kullanıcının telefon/LID numaraları (ör. 905551234567, 12345678901234@lid)
+	// Numbers, kullanıcının telefon/LID numaraları (ör. 905550000001, 12345678901234@lid)
 	Numbers stringList `yaml:"number"`
 
 	// Names, kullanıcının push_name'leri (ör. Mefamex)

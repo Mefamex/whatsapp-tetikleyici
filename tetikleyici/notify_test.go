@@ -66,7 +66,7 @@ func TestBildirimAciksaOnStartGider(t *testing.T) {
 // gitmez. Restart testlerinde on_start'ın tekrar gitmemesinin garantisi.
 func TestBildirimThrottleAyniTur(t *testing.T) {
 	fake := &fakeBridge{}
-	cfg := notifyConfig{To: stringList{"905551234567"}, OnStart: true, Throttle: "5m"}
+	cfg := notifyConfig{To: stringList{"905550000001"}, OnStart: true, Throttle: "5m"}
 	n := bildirimTest(t, fake, cfg)
 
 	n.baslat(t.Context()) // ilk: gider
@@ -82,7 +82,7 @@ func TestBildirimThrottleAyniTur(t *testing.T) {
 func TestBildirimFarkliTurAyriThrottle(t *testing.T) {
 	fake := &fakeBridge{}
 	cfg := notifyConfig{
-		To: stringList{"905551234567"}, OnStart: true, OnStop: true, Throttle: "5m",
+		To: stringList{"905550000001"}, OnStart: true, OnStop: true, Throttle: "5m",
 	}
 	n := bildirimTest(t, fake, cfg)
 
@@ -105,7 +105,7 @@ func TestDamgaDosyadaKalir(t *testing.T) {
 	dizin := t.TempDir()
 	yol := filepath.Join(dizin, "bildirim.txt")
 
-	cfg := notifyConfig{To: stringList{"905551234567"}, OnStart: true}
+	cfg := notifyConfig{To: stringList{"905550000001"}, OnStart: true}
 	n := yeniNotifier(fake.start(t), testOptions(), func() notifyConfig { return cfg }, yol)
 	n.baslat(t.Context())
 	if len(fake.sent) != 1 {
@@ -125,7 +125,7 @@ func TestDamgaDosyadaKalir(t *testing.T) {
 func TestBildirimHataYenidenDener(t *testing.T) {
 	fake := &fakeBridge{sendFailKalan: 2}
 	cfg := notifyConfig{
-		To: stringList{"905551234567"}, OnStart: true,
+		To: stringList{"905550000001"}, OnStart: true,
 		Throttle: "5m", Retry: "10ms", MaxRetry: 5,
 	}
 	n := bildirimTest(t, fake, cfg)
@@ -153,7 +153,7 @@ func TestBildirimHataYenidenDener(t *testing.T) {
 func TestBildirimVazgecer(t *testing.T) {
 	fake := &fakeBridge{sendFailKalan: 99}
 	cfg := notifyConfig{
-		To: stringList{"905551234567"}, OnStart: true,
+		To: stringList{"905550000001"}, OnStart: true,
 		Retry: "5ms", MaxRetry: 3,
 	}
 	n := bildirimTest(t, fake, cfg)
@@ -172,7 +172,7 @@ func TestBildirimVazgecer(t *testing.T) {
 // TestBildirimIptalBaglam: bağlam iptalinde gönderim denenmez, vazgeçilir.
 func TestBildirimIptalBaglam(t *testing.T) {
 	fake := &fakeBridge{}
-	cfg := notifyConfig{To: stringList{"905551234567"}, OnStart: true}
+	cfg := notifyConfig{To: stringList{"905550000001"}, OnStart: true}
 	n := bildirimTest(t, fake, cfg)
 
 	ctx, iptal := context.WithCancel(t.Context())
@@ -190,7 +190,7 @@ func TestBildirimIptalBaglam(t *testing.T) {
 func TestKopruYalnizGecisteBildirir(t *testing.T) {
 	fake := &fakeBridge{}
 	cfg := notifyConfig{
-		To: stringList{"905551234567"}, OnBridgeUp: true, OnBridgeDown: true,
+		To: stringList{"905550000001"}, OnBridgeUp: true, OnBridgeDown: true,
 	}
 	n := bildirimTest(t, fake, cfg)
 
@@ -225,7 +225,7 @@ func TestKopruYalnizGecisteBildirir(t *testing.T) {
 // TestKopruKapaliBayraktaSessiz: on_bridge_down kapalıysa düşüş bildirilmez.
 func TestKopruKapaliBayraktaSessiz(t *testing.T) {
 	fake := &fakeBridge{}
-	cfg := notifyConfig{To: stringList{"905551234567"}, OnBridgeUp: true}
+	cfg := notifyConfig{To: stringList{"905550000001"}, OnBridgeUp: true}
 	n := bildirimTest(t, fake, cfg)
 
 	n.kopru(t.Context(), nil)                 // ilk: sessiz
@@ -277,7 +277,7 @@ func TestConfigIzleyiciDegisinceBildirir(t *testing.T) {
 func TestGuncelNotifyDosyadanOkur(t *testing.T) {
 	yol := filepath.Join(t.TempDir(), "tetikleyici.yaml")
 	// Yedek = BAYAT snapshot: eski çift hedef.
-	bayat := notifyConfig{To: stringList{"905551234567", "12345678901234@lid"}, OnStart: true}
+	bayat := notifyConfig{To: stringList{"905550000001", "12345678901234@lid"}, OnStart: true}
 
 	// Dosyada YENİ ayar (yalnız LID).
 	yeniDosya := `notify:
@@ -314,7 +314,7 @@ rules:
 // geçer (KnownFields). Yanlış alan adı → hata; doğru alanlar → okunur.
 func TestNotifyBlockConfigtenOkunur(t *testing.T) {
 	set, err := parseConfig([]byte(`notify:
-  to: ["905551234567", "12345678901234@lid"]
+  to: ["905550000001", "12345678901234@lid"]
   on_start: true
   on_stop: false
   on_bridge_up: true

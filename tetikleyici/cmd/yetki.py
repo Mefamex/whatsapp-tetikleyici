@@ -109,7 +109,7 @@ if __name__ == "__main__":
     test_yaml = """
 users:
   users:
-    - number: ["905551234567", "12345678901234@lid"]
+    - number: ["905550000001", "12345678901234@lid"]
       name: ["Mefamex"]
       allow_slash: true
       allow_cmd: true
@@ -125,11 +125,11 @@ users:
     os.environ["TRIGGER_CONFIG"] = test_config
 
     testler = [
-        ("905551234567", "Mefamex", True),
+        ("905550000001", "Mefamex", True),
         ("12345678901234@lid", "Mefamex", True),
         ("905550000002", "Burak", False),
         ("", "Mefamex", False),  # numara gerekli
-        ("905551234567", "", True),
+        ("905550000001", "", True),
         ("", "", False),
     ]
 
@@ -140,5 +140,5 @@ users:
 
     # Detaylı test
     print("\nDetaylı:")
-    print(yetki_detayli("905551234567", "Mefamex"))
+    print(yetki_detayli("905550000001", "Mefamex"))
     print(yetki_detayli("905550000002", "Burak"))

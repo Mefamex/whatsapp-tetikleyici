@@ -121,6 +121,9 @@ func (a action) yonlendir(m message) (yol, bool) {
 		}
 		return yol{}, false
 
+	case m.Type == "poll_vote":
+		return yol{ad: "anket oyu → oturum", tip: "session"}, true
+
 	case m.Type == "audio":
 		if a.AllowSes {
 			return yol{ad: "ses hattı", tip: "command", betik: a.Ses, medya: true}, true

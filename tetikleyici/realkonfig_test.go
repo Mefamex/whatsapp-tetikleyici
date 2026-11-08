@@ -54,9 +54,9 @@ func TestGercekConfigKimlikDogruEslesiyor(t *testing.T) {
 	var telefon, lid bool
 	for _, n := range kural.Match.Numbers {
 		switch {
-		case strings.HasPrefix(n, "12345678901234@lid"):
+		case strings.HasSuffix(n, "@lid"):
 			lid = true
-		case strings.Contains(n, "905551234567"):
+		case !strings.Contains(n, "@"):
 			telefon = true
 		}
 	}
@@ -153,9 +153,15 @@ func TestGercekConfigBetiklerDiskteVar(t *testing.T) {
 	} {
 		genislet := expandHome(alan.yol)
 		if _, err := os.Stat(genislet); err != nil {
-			if _, err2 := os.Stat(filepath.Join("..", genislet)); err2 != nil {
-				t.Errorf("%s betiği yok: %s (%v)", alan.ad, genislet, err)
+			if _, err2 := os.Stat(filepath.Join("..", genislet)); err2 == nil {
+				continue
 			}
+			// tetikleyici/ altındayken "tetikleyici/cmd/cmd.py" -> "cmd/cmd.py"
+			kirpilmis := strings.TrimPrefix(genislet, "tetikleyici/")
+			if _, err3 := os.Stat(kirpilmis); err3 == nil {
+				continue
+			}
+			t.Errorf("%s betiği yok: %s (%v)", alan.ad, genislet, err)
 		}
 	}
 }

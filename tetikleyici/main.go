@@ -174,7 +174,7 @@ func run(ctx context.Context, raw args) error {
 	if needsExplicitLID(set) {
 		logf("  not: LID'li sohbetler numaradan türetilemez. O sohbetler ancak")
 		logf("       canlı trafikle öğrenilir ya da config'te tam kimlikle yazılır:")
-		logf("       number: [905551234567, 12345678901234@lid]")
+		logf("       number: [905550000001, 12345678901234@lid]")
 	}
 
 	// Kalp atışı: sessiz kalan sohbeti uyarır. Yapılandırılmamışsa hiç

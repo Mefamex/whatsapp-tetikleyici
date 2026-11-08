@@ -38,13 +38,13 @@ func TestConditionNeverMatchesOwnMessages(t *testing.T) {
 func TestConditionMatchesNumberInEitherJIDField(t *testing.T) {
 	m := message{
 		ID:        "W1",
-		From:      "905551234567@s.whatsapp.net",
+		From:      "905550000001@s.whatsapp.net",
 		Sender:    "12345678901234@lid",
 		Text:      "selam",
 		Direction: "in",
 	}
 
-	for _, number := range []string{"905551234567", "12345678901234", "905551234567@s.whatsapp.net"} {
+	for _, number := range []string{"905550000001", "12345678901234", "905550000001@s.whatsapp.net"} {
 		if !(condition{Numbers: stringList{number}}).matches(m) {
 			t.Errorf("number %q should match in From or Sender", number)
 		}
@@ -141,17 +141,17 @@ func TestMatchingRulesIsEmptyWhenNothingHolds(t *testing.T) {
 func TestSeedJIDsCoversBothFormsAndDeduplicates(t *testing.T) {
 	set, _ := parseConfig([]byte(`rules:
 - name: a
-  match: { number: "905551234567" }
+  match: { number: "905550000001" }
   do: [ { type: command, code: "x" } ]
 - name: b
-  match: { number: "905551234567" }
+  match: { number: "905550000001" }
   do: [ { type: command, code: "y" } ]
 - name: c
   match: { number: "905550000005@s.whatsapp.net" }
   do: [ { type: command, code: "z" } ]`))
 
 	got := seedJIDs(set)
-	want := []string{"905551234567@s.whatsapp.net", "905550000005@s.whatsapp.net"}
+	want := []string{"905550000001@s.whatsapp.net", "905550000005@s.whatsapp.net"}
 
 	if len(got) != len(want) {
 		t.Fatalf("seedJIDs = %v, want %v", got, want)
@@ -176,7 +176,7 @@ func TestSeedJIDsIsEmptyWithoutNumberRules(t *testing.T) {
 
 func TestIdentityTriesNumberFirstThenFallsBackToName(t *testing.T) {
 	m := mefamexMessage()
-	both := condition{Numbers: stringList{"905551234567"}, Names: stringList{"Mefamex"}}
+	both := condition{Numbers: stringList{"905550000001"}, Names: stringList{"Mefamex"}}
 
 	got := both.resolve(m)
 	if !got.matched {
@@ -195,11 +195,11 @@ func TestIdentityTriesNumberFirstThenFallsBackToName(t *testing.T) {
 
 func TestIdentityPrefersTheNumberWhenItMatches(t *testing.T) {
 	m := message{
-		ID: "W", From: "905551234567@s.whatsapp.net", Sender: "12345678901234@lid",
+		ID: "W", From: "905550000001@s.whatsapp.net", Sender: "12345678901234@lid",
 		PushName: "Mefamex", Direction: "in",
 	}
 
-	got := (condition{Numbers: stringList{"905551234567"}, Names: stringList{"Mefamex"}}).resolve(m)
+	got := (condition{Numbers: stringList{"905550000001"}, Names: stringList{"Mefamex"}}).resolve(m)
 
 	if got.via != "number" {
 		t.Errorf("via = %q, want number (priority)", got.via)
@@ -233,7 +233,7 @@ func TestIdentityWithNoFieldsMatchesEverything(t *testing.T) {
 }
 
 func TestIdentityDetailLineExplainsTheLIDFallback(t *testing.T) {
-	line := (condition{Numbers: stringList{"905551234567"}, Names: stringList{"Mefamex"}}).
+	line := (condition{Numbers: stringList{"905550000001"}, Names: stringList{"Mefamex"}}).
 		resolve(mefamexMessage()).detailLine()
 
 	if !strings.Contains(line, "name=Mefamex") {
@@ -252,7 +252,7 @@ func TestIdentityDetailLineForNumber(t *testing.T) {
 }
 
 func TestConditionDescribeMarksTheNameAsFallback(t *testing.T) {
-	got := (condition{Numbers: stringList{"905551234567"}, Names: stringList{"Mefamex"}}).describe()
+	got := (condition{Numbers: stringList{"905550000001"}, Names: stringList{"Mefamex"}}).describe()
 	if !strings.Contains(got, "name=Mefamex (fallback)") {
 		t.Errorf("describe = %q, name should be marked as fallback", got)
 	}

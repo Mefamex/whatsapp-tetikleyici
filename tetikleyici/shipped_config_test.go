@@ -276,7 +276,7 @@ func TestShippedConfigCoversEveryActionKind(t *testing.T) {
 func TestShippedConfigCoversTheLIDTrap(t *testing.T) {
 	raw := readShippedConfig(t)
 
-	if !strings.Contains(raw, "12345678901234@lid") {
+	if !strings.Contains(raw, "@lid") {
 		t.Error("real LID example must be in shipped config")
 	}
 	if !strings.Contains(strings.ToUpper(raw), "DERIVABLE") && !strings.Contains(strings.ToUpper(raw), "TÜRET") {
