@@ -118,6 +118,136 @@ Silinen eski `whatsapp-bridge-project` arşivinden kopyalanıp **commit'lenmemi�
   - Kullanıcı emojiyi config'ten dilediği gibi değiştirebilir ya da `aktif: false` ile tamamen kapatabilir.
 - [ ] **Uzun Süren Görevlerde Durum Güncellemesi:** 10 saniyeden uzun süren analizlerde WhatsApp'a ara aşama durum bildirimleri (*"Araştırılıyor 🔍"*, *"Derleniyor ⚙️"*) gönderilir.
 
+### 13. 🏛️ KRİTİK MİMARİ YÜKSELTMESİ: Headless Daemon + Birleşik CLI + Gömülü Web Dashboard [PLANLANDI]
+> **Stratejik Tasarım Kararı:** Ağır masaüstü pencere uygulamaları (Electron, Qt, Tauri vb.) yerine; sistem yükünü minimumda tutan (~30MB RAM), headless sunucu/VPS/Raspberry Pi uyumlu, güvenlik açığı yaratmayan ve üst düzey kullanım kolaylığı sunan 3 katmanlı hibrit mimariye geçiş.
+
+- [ ] **Katman 1: Headless Daemon (Mevcut Hafif Çekirdek Korunur):**
+  - Go + Whatsmeow köprüsü ve Tetikleyici motoru arka planda `systemd` servisi olarak bağımsız çalışmaya devam eder.
+  - X11/Wayland zorunluluğu yoktur; ekransız sunucularda sıfır konfigürasyonla çalışır.
+- [ ] **Katman 2: Birleşik Yönetim CLI (`tetikleyici` / `wb` CLI):**
+  - Dağınık bash scriptleri yerine tek bir derlenmiş, zengin Go CLI arayüzü:
+    - `tetikleyici status`: Köprü, tetikleyici ve AI ajanlarının canlılık/gecikme durumunu gösterir.
+    - `tetikleyici qr`: Terminal içinde ANSI bloklarıyla WhatsApp eşleme QR kodu üretir.
+    - `tetikleyici logs -f`: Anlık SSE olaylarını ve tünel akışını terminale renkli formatta basar.
+    - `tetikleyici config check`: YAML yapılandırmasını, yetkili numaraları ve kuralları doğrular.
+    - `tetikleyici session list/kill`: Aktif oturumları CLI'dan yönetir.
+- [ ] **Katman 3: Sıfır-Yüklü Gömülü Web Paneli (Go `embed` Web Dashboard):**
+  - Ekstra Node.js veya Electron gerektirmeyen, doğrudan Go ikilisine gömülü (`go:embed`) tek sayfalık hafif web arayüzü (`http://127.0.0.1:31415/dashboard`).
+  - Yalnızca yerel arayüzü (`127.0.0.1`) dinler, harici saldırı yüzeyi oluşturmaz.
+  - **Özellikler:**
+    - Tarayıcı üzerinden tek tıkla büyük ve net QR kod okutma (özellikle ilk kurulum ve mobil tarayıcı kolaylığı).
+    - Canlı servis durum kartları (bellek, CPU, bağlantı durumu, uptime).
+    - Canlı SSE mesaj ve olay akışı paneli.
+    - Yetkili kullanıcı ve kural izinlerinin görsel özeti.
+- [ ] **Katman 4: Asıl Kullanıcı Arayüzü WhatsApp'ın Kendisidir ("ChatOps"):**
+  - Günlük kullanımda masaüstünde ek pencereye ihtiyaç duyulmaz; `/cmd`, `/camera`, `/ekran`, `/agent`, anketler ve emoji reaksiyonlarıyla WhatsApp içi yönetim korunur.
+
+### 14. 📁 Çift Yönlü Dosya ve Belge Transferi (`/get <yol>` ve WhatsApp Dosya Kabulü) [PLANLANDI]
+- [ ] **WhatsApp'tan Telefona Dosya İndirme (`/get <dosya_yolu>`):**
+  - Admin WhatsApp'tan `/get /mnt/DiskD/rapor.pdf` veya `/get config.yaml` yazdığında dosya varlığı ve boyutu (max 50 MB WhatsApp document sınırı) doğrulanır.
+  - MIME türü otomatik tespit edilir (`application/pdf`, `text/plain`, `image/*` vb.).
+  - `whatsapp-bridge` üzerinden `POST /send-file` çağrılarak dosya doğrudan WhatsApp belgesi (`document`) formatında sohbete teslim edilir.
+- [ ] **Telefondan Bilgisayara Dosya Yükleme (Inbound File Handler):**
+  - Admin telefondan bir dosya/script attığında güvenli varsayılan dizine (`~/Downloads/whatsapp-files/` veya aktif ajanın çalışma dizinine) indirilir.
+  - Güvenlik: İndirilen dosyaların çalıştırma yetkisi kaldırılır (`chmod -x`).
+  - Bildirim: WhatsApp'a *"📥 Dosya kaydedildi: `~/Downloads/whatsapp-files/rapor.pdf` (1.4 MB)"* yanıtı verilir.
+  - Oturum tünelindeyse (`/session go`), ajanın bağlamına *"Kullanıcı bu dosyayı diske kaydetti: `<tam_yol>`"* bildirimi düşülür.
+
+### 15. 📂 Ajan Çalışma Dizinini Dinamik Değiştirme (`/root <dizin>`) [PLANLANDI]
+- [ ] **Dinamik Repo / Çalışma Alanı Değişimi:**
+  - Mevcut `/cmdhub cd` yalnız interaktif bash oturumunu etkiliyor. `/root <dizin>` komutu ise aktif kural veya oturumun çalışma dizinini (`cwd` / `workdir`) değiştirir.
+  - Örnek: `/root /mnt/DiskD/SOFTWARE/Github-repos/whatsapp-tetikleyici`.
+  - Dizin doğrulanır; yoksa açıklayıcı hata mesajı döner.
+  - Sonraki tüm `/cmd` çağrıları ve AI ajan çalıştırmaları (`opencode`, `agy`, `claude`) bu yeni kök dizin bağlamında yürütülür.
+  - Parametresiz `/root`: Aktif çalışma dizinini WhatsApp'a raporlar.
+
+### 16. 📋 Wayland / KDE Plasma Sistem Panosu Kontrolü (`/clip`) [PLANLANDI]
+- [ ] **Sistem Panosunu Telefona Çekme (`/clip` / `/pano`):**
+  - Arch Linux KDE Plasma 6 (Wayland) mimarisine uygun olarak `wl-paste -t text/plain` çağrısıyla bilgisayarın panosundaki metin okunur ve WhatsApp'a mesaj olarak iletilir.
+  - Çok uzun panolarda ilk 2000 karakter + kırpma uyarısı uygulanır.
+- [ ] **Telefondan Bilgisayar Panosuna Metin Kopyalama (`/clip <metin>`):**
+  - WhatsApp'tan gelen metin bilgisayar panosuna basılır: `echo -n "<metin>" | wl-copy`.
+  - Telefonda kopyalanan bir token, link veya kod parçasını anında bilgisayarda Ctrl+V yapabilme imkânı sağlar.
+  - Yalnızca `allow_cmd: true` olan admin kullanıcılara açıktır.
+
+### 17. 🪟 Açık Pencereler ve Süreç Denetimi (`/apps` & `/kill`) [PLANLANDI]
+- [ ] **Açık Pencereleri Listeleme (`/apps` / `/pencereler`):**
+  - Wayland / Plasma üzerinde çalışan grafik uygulamalarını veya pencereleri listeler (`qdbus org.kde.KWin /KWin org.kde.KWin.queryWindowInfo` / `kdotool` veya aktif GUI süreçleri).
+  - Format: `1. Google Chrome (PID 12450)`, `2. Cursor (PID 3341)`, `3. Konsole (PID 5512)`.
+- [ ] **Askıda Kalan Süreci Kapatma (`/kill <uygulama_veya_pid>`):**
+  - Yanıt vermeyen uygulamayı uzaktan sonlandırır (`kill -15 <pid>` veya `pkill -f <uygulama>`).
+  - Güvenlik: Kritik sistem servisleri (`systemd`, `dbus`, `wayland`, `whatsapp-bridge`) kara listededir; asla kill edilemez.
+
+### 18. 🎙️ Yerel TTS Sesli Yanıt (Voice-to-Voice: Piper TTS ile WhatsApp `.ogg opus` Sesli Notu) [PLANLANDI]
+- [ ] **Hafif Yerel TTS (Piper):**
+  - CPU'da sıfır VRAM tüketimiyle gerçek zamanlı çalışan yerel `Piper TTS` (Türkçe model: `tr_TR-dfki-medium` vb.) entegrasyonu.
+  - GPU VRAM'i Whisper veya LLM ile çakışmaz, tamamen hafif çalışır.
+- [ ] **WhatsApp Uyumlu Ses Formatı (`.ogg opus` PTT):**
+  - Piper tarafından üretilen `.wav` dosyası `ffmpeg` ile WhatsApp sesli not formatına (`audio/ogg; codecs=opus`) çevrilir.
+  - `whatsapp-bridge`'in `POST /send-file` endpoint'ine `is_voice_note: true` iletilerek karşı tarafta yeşil mikrofonlu gerçek "sesli mesaj" olarak teslim edilir.
+- [ ] **Tetikleme Mantığı:**
+  - Admin sesli not attığında (veya yapılandırmada `sesli_cevap: true` ise / `/tts on`) metin yerine doğrudan sesli not gönderilir.
+
+### 19. 🧠 Ajan Bağlamını Hafifletme ve Sıkıştırma (`/compact` / `/ozet`) [PLANLANDI]
+- [ ] **Oturum Bağlamını Küçültme:**
+  - Uzun süren WhatsApp tünel konuşmalarında token şişmesini ve yavaşlamayı önlemek için WhatsApp'tan `/compact` komutu verilir.
+  - Aktif ajana (`agy`, `claude`, `opencode`) oturumdaki ana kararları ve teknik adımları yoğun bir özet haline getirme talimatı iletilir.
+  - Oturum sıfırlanmadan bağlam hafifletilir; gereksiz tur geçmişi temizlenir.
+- [ ] **Şişme Uyarısı:** Oturum tur sayısı belirlenen eşiği (ör. 25 tur) aştığında tetikleyici WhatsApp'a `"💡 Bağlam penceresi genişledi, /compact önerilir"` ipucu gönderir.
+
+### 20. 🚨 Proaktif Sistem Sağlık Bekçisi ve Eşik Uyarıları (Passive Watcher) [PLANLANDI]
+- [ ] **Periyodik Arka Plan Denetimi (Cron/Timer):**
+  - Yalnız komut verildiğinde çalışan `/durum` haricinde; `tetikleyici.yaml` içinde tanımlanan eşikleri periyodik (ör. 10 dakikada bir) izleyen arka plan bekçisi:
+    ```yaml
+    bekci:
+      aktif: true
+      kontrol_araligi: 10m
+      esikler:
+        disk_doluluk_yuzde: 90
+        ram_doluluk_yuzde: 95
+        cpu_sicaklik_c: 85
+        servisler: ["whatsapp-bridge.service", "systemd-networkd.service"]
+    ```
+- [ ] **Otonom Alarm ve Spam Koruması:**
+  - Eşik aşıldığında veya kritik servis düştüğünde WhatsApp'a acil durum uyarısı (`🚨 Sistem Bekçisi Uyarısı: / disk doluluğu %92!`) gönderilir.
+  - Aynı arıza için 1 saat içinde tekrar mesaj atılmaz (cooldown koruması).
+
+### 21. 🔗 QR Kodsuz 8 Haneli Eşleştirme Kodu (Pairing Code Desteği) [PLANLANDI]
+- [ ] **Whatsmeow Pairing Code Entegrasyonu:**
+  - Whatsmeow kütüphanesinin yerleşik `client.PairPhone(phoneNumber)` API'si kullanılarak `POST /pair-phone` endpoint'i eklenir.
+  - Terminalde QR kod okutmak yerine WhatsApp sunucusundan 8 haneli kod (ör: `ABCD-1234`) alınır.
+  - Kullanıcı telefonunda WhatsApp ▸ Bağlı Cihazlar ▸ "Telefon Numarasıyla Bağla" adımına bu kodu girer.
+  - Ekransız/headless sunucu kurulumlarında ve kamera netleme sorunlarında QR kodsuz hızlı eşleşme sağlar.
+
+### 22. 📦 BÜYÜK BİRLEŞME: İki Repoyu Tek Modüler Monorepoda Toplama [PLANLANDI]
+> **Gerekçe:** `whatsapp-bridge-mcp` ve `whatsapp-tetikleyici` arasındaki çapraz bağımlılıkları (çift TODO, çift Makefile, çift .venv, çift git commit) ortadan kaldırmak; tek `git clone` ile kurulabilen, süreç izolasyonunu bozmadan tek çatıdan yönetilen modüler bir yapıya geçmek.
+
+- [ ] **1. Dizin ve Paket Mimarisi (Modüler Monorepo Tasarımı):**
+  ```text
+  whatsapp-station/ (veya whatsapp-bridge / whatsapp-agent)
+  ├── cmd/
+  │   ├── bridge/          # Go: Whatsmeow soket çekirdeği (:31415 REST & SSE)
+  │   ├── tetikleyici/     # Go: Olay dağıtım motoru (Dispatcher & RBAC)
+  │   └── cli/             # Go: Birleşik yönetim CLI (status, qr, logs, sessions)
+  ├── mcp/                 # Python: FastMCP STDIO sunucusu
+  ├── pipelines/           # Python: Whisper (ses) ve Ollama (görsel/OCR) boruları
+  ├── web/                 # Gömülü Web Dashboard (HTML/JS static assets)
+  ├── config.example.yaml  # Tek, birleşik yapılandırma şablonu
+  ├── Makefile             # Tek komutla derleme, test ve servis yönetimi
+  └── README.md & TODO.md  # Tekil dokümantasyon ve sprint takibi
+  ```
+- [ ] **2. Birleşik Yapılandırma (`config.yaml`):**
+  - `bridge:` (port, host, db_path) ve `tetikleyici:` (users, rules, agents, pipelines) bloklarını tek YAML dosyasında toplama.
+  - Gizli anahtarlar, veritabanı (`whatsmeow.db`) ve telefon/LID verileri için tek birleşik `.gitignore` hijyeni.
+- [ ] **3. Süreç İzolasyonunun (Crash-Isolation) Korunması:**
+  - Whatsmeow köprüsü ve Tetikleyici motorunun bağımsız hata izolasyonu aynen korunacak.
+  - İster iki bağımsız `systemd` servisi olarak, ister tek bir Go binary'sinden alt komutlarla (`wa bridge`, `wa daemon`, `wa cli`) çalıştırılabilecek; biri çökse bile diğeri ayakta kalacak.
+- [ ] **4. Geçiş ve Taşıma Adımları:**
+  - Git geçmişi korunarak (veya temiz squash/merge ile) dosyaları hedef monorepo çatısında toplama.
+  - Bağımlılıkları birleştirme: Go `go.work` veya kök `go.mod`; Python tek `.venv` (`uv` ile `fastmcp`, `whisper`, `torch`).
+  - `Makefile` hedeflerini tekilleştirme (`make build`, `make run`, `make test`, `make verify`).
+  - Sistem servislerini (`~/.config/systemd/user/`) yeni birleşik yollara güncelleme.
+
 ---
 
 ## Kritik / Bloke
