@@ -71,6 +71,9 @@ type ruleSet struct {
 	// acik: false ise KAPALIDIR.
 	Tehlikeli tehlikeliConfig `yaml:"tehlikeli_mesaj"`
 
+	// TepkiEmojisi, gelen mesaj işlenirken ve bitince bırakılan geri bildirim emojileri.
+	TepkiEmojisi tepkiEmojisiConfig `yaml:"tepki_emojisi"`
+
 	// Users, kullanıcı başına yetki ayarları (3 aşamalı model).
 	// 1. Kişi config'de var mı? (users listesinde)
 	// 2. / ile gelen mesajlara yetkisi var mı? (allow_slash)
@@ -79,6 +82,14 @@ type ruleSet struct {
 
 	// Rules sırayla değerlendirilir; hepsi de tutarsa hepsi çalışır.
 	Rules []rule `yaml:"rules"`
+}
+
+// tepkiEmojisiConfig, mesaj işleme sürecinde bırakılacak emoji ayarları.
+type tepkiEmojisiConfig struct {
+	Aktif     bool   `yaml:"aktif"`
+	Isleniyor string `yaml:"isleniyor"`
+	Basarili  string `yaml:"basarili"`
+	Hatali    string `yaml:"hatali"`
 }
 
 // zamanlanmisConfig, zamanlanmış mesaj ayarları.

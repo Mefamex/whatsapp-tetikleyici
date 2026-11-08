@@ -82,6 +82,14 @@ kamera_izni: true
 # spam yapmasını önler. Örnek: 10m, 15m, 1h. Varsayılan: 10m.
 catchup_max_age: 10m
 
+# ── tepki_emojisi: yetkili mesajlara anlık geri bildirim reaksiyonu ────
+# Yalnızca eşleşen kurallara uygulanır; genel sohbetleri kirletmez.
+tepki_emojisi:
+  aktif: true
+  isleniyor: "👀"
+  basarili: "✅"
+  hatali: "❌"
+
 # ── users: 3 aşamalı yetki modeli (2026-10-07) ───────────────────────────
 # 1) Kişi config'de var mı? (users listesinde number/name eşleşmesi)
 # 2) O kişinin `/` mesajlarına yetkisi var mı? (allow_slash)

@@ -196,7 +196,7 @@ make clean      # Geçici önbellekleri, test artıklarını ve logları temizle
 - [ ] **🛡️ İnteraktif Onay Sistemi:** Riskli eylemlerde WhatsApp'a 4 seçenekli anket atarak onay isteme (Tek seferlik onayla, Reddet, 1 saatliğine tümünü onayla, 1 haftalığına tümünü onayla).
 - [ ] **📸 `/ekran` Masaüstü Yakalama:** Monitörün anlık ekran görüntüsünü WhatsApp'a yollama (`spectacle`/`grim`).
 - [ ] **⏱️ Yapay Zekâ Destekli Cron:** Periyodik otonom görevler (`/zamanla her sabah 08:30 günün özetini hazırla`).
-- [ ] **⏳ Canlı İlerleme ve Emoji Geri Bildirimi:** Mesaj işlenirken otomatik `👀` / `⏳`, tamamlandığında `✅` reaksiyonu koyma ve uzun süren işlerde canlı durum güncellemesi.
+- [ ] **⏳ Canlı İlerleme ve Hızlı Tepki Emojisi:** Mesaj işlenirken otomatik `👀` / `⏳`, tamamlandığında `✅` reaksiyonu koyma ve uzun süren işlerde canlı durum güncellemesi (`tetikleyici.yaml` içinden `tepki_emojisi` ile tamamen özelleştirilebilir).
 
 ---
 

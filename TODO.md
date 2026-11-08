@@ -100,11 +100,22 @@ Silinen eski `whatsapp-bridge-project` arşivinden kopyalanıp **commit'lenmemi�
   - `/zamanla 2 saatte bir sunucu ve servis sağlığını kontrol et, sorun varsa haber ver`
 - [ ] **Arka Plan Çalıştırıcısı:** Zamanı geldiğinde ajanın sabit oturumu tetiklenir, araçları (MCP/CLI) kullanarak araştırmasını yapar ve üretilen çıktıyı WhatsApp'a iletir.
 
-### 12. ⏳ Canlı İlerleme Bildirimi ve Mesaja Reaksiyon (Emoji Feedback) [PLANLANDI]
+### 12. ⏳ Canlı İlerleme Bildirimi ve Hızlı Tepki Emojisi (Emoji Feedback) [PLANLANDI]
+- [ ] **Yapılandırma Dosyası Desteği (`tepki_emojisi`):**
+  - `tetikleyici.yaml` içinde `tepki_emojisi` bloğu:
+    ```yaml
+    tepki_emojisi:
+      aktif: true
+      isleniyor: "👀" # veya "⏳"
+      basarili: "✅"
+      hatali: "❌"
+    ```
+  - Sadece eşleşen kurallara ve yetkili admin mesajlarına uygulanır (tüm genel WhatsApp gruplarını/sohbetlerini kirletmez).
 - [ ] **Gelen Mesaja Anlık Reaksiyon:**
-  - Admin mesaj attığında tetikleyici mesajı alıp sıraya koyduğu an mesaja otomatik `👀` veya `⏳` reaksiyonu bırakır (kullanıcı mesajının ulaştığını ve işlendiğini anında anlar).
-  - İşlem başarıyla bitip cevap gönderildiğinde reaksiyon `✅` yapılır.
-  - Hata oluşursa reaksiyon `❌` yapılır.
+  - Admin mesaj attığında tetikleyici mesajı alıp sıraya koyduğu an mesaja otomatik `isleniyor` ("👀" veya "⏳") reaksiyonu bırakır.
+  - İşlem başarıyla bitip cevap gönderildiğinde reaksiyon `basarili` ("✅") yapılır.
+  - Hata oluşursa reaksiyon `hatali` ("❌") yapılır.
+  - Kullanıcı emojiyi config'ten dilediği gibi değiştirebilir ya da `aktif: false` ile tamamen kapatabilir.
 - [ ] **Uzun Süren Görevlerde Durum Güncellemesi:** 10 saniyeden uzun süren analizlerde WhatsApp'a ara aşama durum bildirimleri (*"Araştırılıyor 🔍"*, *"Derleniyor ⚙️"*) gönderilir.
 
 ---
