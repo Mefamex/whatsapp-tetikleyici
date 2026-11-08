@@ -6,7 +6,12 @@
 
 ## 1. Açık Sorular (Cevap Bekleyenler)
 
-*Şu an açık bir mimari soru bulunmamaktadır.*
+### [2026-11-08] agy geçmişindeki büyük WhatsApp sohbetleri silinsin mi?
+`~/.gemini/antigravity/conversation_summaries.db` ve `agyhub_summaries_proto.pb` içinden `WhatsApp'tan…` ile başlayan **11 küçük (2 adımlık)** sohbet silindi. Yedek: `~/.gemini/antigravity/scratch/agy-gecmis-yedek-20261108/`.
+Aşağıdaki **6 sohbet** WhatsApp'tan başlamış ama arkasında gerçek iş yapılmış; kullanıcı kararı bekleniyor:
+- `8bf93805` (10 adım) · `338def07` (18) · `d32732af` (38) · `dd1f552e` (40) · `eebd8bde` (48) · `f51bc831` (132)
+- **Soru:** Hepsi silinsin mi, bir kısmı mı, hiçbiri mi?
+- **Not:** Sorun kalıcı çözülmedikçe (TODO #7, sabit oturum) her yeni WhatsApp mesajı geçmişi tekrar kirletir.
 
 ---
 
