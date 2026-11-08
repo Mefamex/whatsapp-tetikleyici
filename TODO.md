@@ -46,25 +46,31 @@
 - [x] **Kullanıcı Oturumuna Bağlama:** `systemctl --user enable --now whatsapp-tetikleyici.service` ile bilgisayar açılışında otomatik başlama aktif edildi.
 - [x] **Canlı Doğrulama:** `systemctl --user status whatsapp-tetikleyici` ile PID 363706 aktif, bağlı ve çalışıyor.
 
-### 7. 🧵 Tek Kalıcı Oturum (Sabit Session ID) — AGY / Claude / OpenCode [SIRADA 🎯]
-**Sorun:** `runAgent` (`tetikleyici/action.go`) agy ve claude için her mesajda `agy -p "<prompt>"` / `claude -p "<prompt>"` çalıştırıyor → her mesaj SIFIR bağlamlı yeni konuşma; önceki mesajı hatırlamıyor. Prompt'a yalnız son birkaç mesaj gömülüyor (bu bir hafıza değil, yama). OpenCode zaten `--session` ile sabit oturuma gidiyor.
+### 7. 🧵 Tek Kalıcı Oturum (Sabit Session ID) ve Ajan Adaptör Mimarisi [SIRADA 🎯]
+**Sorun:**
+1. `runAgent` (`tetikleyici/action.go`) agy ve claude için her mesajda `agy -p "<prompt>"` / `claude -p "<prompt>"` çalıştırıyor → her mesaj SIFIR bağlamlı yeni konuşma; önceki mesajı hatırlamıyor.
+2. `opencode`, `agy` ve `claude` CLI'larının oturum listeleme (`session list`), oturum formatları (`ses_...` vs UUID), bayrakları ve girdi/çıktı yöntemleri tamamen birbirinden farklı. Tek bir fonksiyon içine gömülen `if/else` blokları sürdürülemez hâle geliyor.
 
-**Ölçülen bayraklar (2026-11-08, `--help` çıktısından):**
-- agy: `--conversation <ID>` (belirli konuşmayı sürdür) · `-c/--continue` (en sonuncuyu sürdür)
-- claude: `-r/--resume <session-id>` · `--session-id <uuid>` (ilk oturumu bu kimlikle KUR) · `-c`
-- opencode: `-s/--session <id>` (yoksa oluşturur) — zaten kullanılıyor
+**Ölçülen bayraklar ve farklar (2026-11-08):**
+- **agy:** `--conversation <ID>` (belirli konuşmayı sürdür) · `-c/--continue` (en sonuncuyu sürdür) · oturumlar `~/.gemini/antigravity-cli/` altında tutulur.
+- **claude:** `-r/--resume <session-id>` · `--session-id <uuid>` (ilk oturumu bu kimlikle kur) · `-c` · oturum listesi `~/.claude/projects/` altındadır.
+- **opencode:** `-s/--session <id>` (yoksa oluşturur) · `opencode session list` komutu ile listelenir.
 
-**Tasarım kararı (öneri): motor başına SABİT kimlik, config'de.**
-- [ ] `tetikleyici.yaml` → `sessions:` bloğu: `agy: <conversation-id>`, `claude: <uuid>`, `opencode: ses_…`. Kural başına değil motor başına; `/agent <motor>` değişince o motorun kendi sabit oturumu devreye girer (motorlar arası geçişte bağlam taşınmaz, bilinçli).
-- [ ] `runAgent` agy dalı: `--conversation <id>` ekle. Claude dalı: `--resume <id>`; ilk kurulum için `--session-id <uuid>` (uuid'i tetikleyici üretip config'e/duruma yazar).
-- [ ] Kimlik yoksa: ilk çalıştırmada oluştur, `.tetikleyici/oturumlar.json`'a kaydet, sonrakilerde yeniden kullan (kullanıcı elle config yazmak zorunda kalmasın).
-- [ ] **AÇIK SORU (önce ölç):** agy `-p` çıktısından yeni konuşmanın ID'si nasıl alınır? (`--output-format json` denenecek; alınamıyorsa `--conversation` için ID'yi kullanıcı bir kez verir.)
-- [ ] **Eşzamanlılık:** aynı oturuma iki mesaj aynı anda gelirse çakışır. `oturumKilidiAl` (opencode için var) agy/claude'a da uygulanıyor — doğrula; mesajlar sırayla işlensin.
-- [ ] **Bağlam şişmesi:** tek oturum sonsuz uzar. Eşik (ör. N tur / token) aşılınca otomatik özet + yeni oturum veya `/session yeni` komutu. Yoksa model yavaşlar/pahalanır.
-- [ ] **Prompt sadeleştirme:** oturum hatırladığı için `buildPrompt` içindeki "Son mesajlar" penceresi sabit oturumda gereksiz tekrar — yalnız YENİ mesajı gönder (isteğe bağlı bayrak: `history_in_prompt: false`).
-- [ ] `/session` tünel komutu ile ilişki: tünel = geçici başka oturum, sabit oturum = varsayılan. `/session exit` sabit oturuma döner (bugünkü davranışla uyumlu, doğrula).
-- [ ] Test: aynı oturumda 2 ardışık mesajda ikincisi birincisini hatırlıyor (canlı); restart sonrası da hatırlıyor (canlı).
-- **Risk:** `--dangerously-skip-permissions` ile uzun ömürlü tek oturum = tüm WhatsApp trafiği aynı yetkili bağlamda. Güvenlik notu README'ye yazılacak.
+**Tasarım kararı: Ajan Adaptör (Driver/Provider) Katmanı:**
+- [ ] **Ortak `AgentDriver` Arayüzü:**
+  - `ListSessions()` → `[{id, title, updated_at}]`
+  - `Run(session_id, prompt)` → string reply
+  - `NewSession(prompt)` → `(session_id, reply)`
+- [ ] **Ajan Sürücüleri (`drivers/` veya `agents/`):**
+  - `opencode_driver.go`: `opencode session list` parse eder, `opencode run -s <id>` çağırır.
+  - `agy_driver.go`: `~/.gemini/antigravity-cli/cache/` ve veritabanından oturumları çeker, `--conversation <id>` ile mesaj iletir.
+  - `claude_driver.go`: JSONL kayıtlarından oturumları listeler, `--resume <id>` / `--session-id <uuid>` yönetir.
+- [ ] **Sanal Takma Ad (Alias / Sabit Kimlik):**
+  - `tetikleyici.yaml` içinde `session: "whatsapp-mefamex"` gibi sanal alias desteği.
+  - Adaptör ilgili ajanda bu alias'a denk gelen oturumu yoksa bir kere açıp ID'sini `.tetikleyici/oturumlar.json`'a sabitler; sonraki tüm mesajlar o ID üzerinden akar.
+- [ ] **Eşzamanlılık ve Sıralama:** `oturumKilidiAl` mekanizması tüm ajan sürücülerine genişletilecek; aynı anda gelen WhatsApp mesajları aynı oturumu kilitleyip sırayla işleyecek.
+- [ ] **Bağlam Şişmesi Koruması:** Tek oturum sonsuz uzamaması için token/tur eşiği aşıldığında otomatik arşivleme/özetleme veya `/session yeni` komutu.
+- [ ] **Prompt Temizliği:** Kalıcı oturumda geçmiş mesaj penceresi tekrar tekrar prompt'a gömülmeyecek; yalnız yeni gelen mesaj gönderilecek.
 
 ### 8. 🧹 Eski Monorepo'dan Taşınan Dosyaların PII Taraması ve Pushlanması [BEKLİYOR — sonra]
 Silinen eski `whatsapp-bridge-project` arşivinden kopyalanıp **commit'lenmemiş** duran tek nüsha dosyalar (orijinal silindi, bu kopyalar kaybolmamalı):
